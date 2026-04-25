@@ -1,0 +1,28 @@
+# Virtual env
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+
+# Env variables
+.env
+
+# ML / heavy files (VERY IMPORTANT)
+models/
+*.h5
+*.keras
+*.pt
+*.pth
+
+# logs
+*.log

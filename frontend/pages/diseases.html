@@ -1,0 +1,60 @@
+﻿<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Disease library with Arabic and English ophthalmology guidance." />
+  <title>Digital Ophthalmology Assistant | Disease Library</title>
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <script defer src="../assets/icons.js"></script>
+  <script defer src="../js/app.js"></script>
+</head>
+<body data-page="diseases">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="index.html"><span class="icon" data-icon="eye"></span>Digital Ophthalmology Assistant</a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle navigation"><span class="icon" data-icon="settings"></span>Menu</button>
+      <nav id="site-nav" class="nav" aria-label="Primary">
+        <a href="index.html">Home</a>
+        <a href="diagnose.html">Diagnosis</a>
+        <a href="diseases.html" aria-current="page">Disease Library</a>
+        <a href="education.html">Education</a>
+        <a href="safety.html">Safety</a>
+        <a href="about.html">About</a>
+      </nav>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme"><span class="icon theme-icon" data-icon="sun"></span></button>
+    </div>
+  </header>
+
+  <main id="main-content" class="section">
+    <div class="container stack">
+      <div class="section-head reveal reveal-up">
+        <h1>Disease Knowledge Base</h1>
+        <p>Structured educational reference for supported anterior eye conditions.</p>
+      </div>
+
+      <div class="library-layout reveal reveal-up">
+        <aside class="card sticky-card stack reveal reveal-left" aria-label="Quick navigation">
+          <h2>Quick Navigation</h2>
+          <input id="disease-search" class="search" type="search" placeholder="Search condition..." aria-label="Search diseases" />
+          <div id="library-tabs" class="tabs" role="tablist" aria-label="Disease filters">
+            <button class="tab-btn active" type="button" role="tab" aria-selected="true" data-disease="">All</button>
+            <button class="tab-btn" type="button" role="tab" aria-selected="false" data-disease="Cataract">Cataract</button>
+            <button class="tab-btn" type="button" role="tab" aria-selected="false" data-disease="Conjunctivitis">Conjunctivitis</button>
+            <button class="tab-btn" type="button" role="tab" aria-selected="false" data-disease="Keratitis">Keratitis</button>
+            <button class="tab-btn" type="button" role="tab" aria-selected="false" data-disease="Normal">Normal</button>
+            <button class="tab-btn" type="button" role="tab" aria-selected="false" data-disease="Pterygium">Pterygium</button>
+          </div>
+        </aside>
+
+        <section id="disease-sections" class="stack reveal reveal-right"></section>
+      </div>
+    </div>
+  </main>
+
+  <button id="back-to-top" class="back-to-top" type="button" aria-label="Back to top"><span class="icon" data-icon="chevron"></span></button>
+  <div id="toast-root" class="toast-root" aria-live="polite" aria-atomic="true"></div>
+  <footer class="footer"><div class="container"><p>Educational platform interface only. Not a substitute for licensed medical diagnosis.</p></div></footer>
+</body>
+</html>

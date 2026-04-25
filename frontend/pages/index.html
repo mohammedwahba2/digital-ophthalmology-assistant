@@ -1,0 +1,135 @@
+﻿<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Digital Ophthalmology Assistant for anterior eye triage and patient education." />
+  <title>Digital Ophthalmology Assistant | Home</title>
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <script defer src="../assets/icons.js"></script>
+  <script defer src="../js/app.js"></script>
+</head>
+<body data-page="home">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="index.html"><span class="icon" data-icon="eye"></span>Digital Ophthalmology Assistant</a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle navigation"><span class="icon" data-icon="settings"></span>Menu</button>
+      <nav id="site-nav" class="nav" aria-label="Primary">
+        <a href="index.html" aria-current="page">Home</a>
+        <a href="diagnose.html">Diagnosis</a>
+        <a href="diseases.html">Disease Library</a>
+        <a href="education.html">Education</a>
+        <a href="safety.html">Safety</a>
+        <a href="about.html">About</a>
+      </nav>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme"><span class="icon theme-icon" data-icon="sun"></span></button>
+    </div>
+  </header>
+
+  <main id="main-content" class="hidden-overflow">
+    <section class="hero reveal reveal-up">
+      <div class="hero-blob hero-blob-a" aria-hidden="true"></div>
+      <div class="hero-blob hero-blob-b" aria-hidden="true"></div>
+      <div class="container hero-grid">
+        <div class="stack">
+          <p class="eyebrow"><span class="icon" data-icon="activity"></span>Clinical Decision Support Interface</p>
+          <h1>AI Eye Diagnosis Platform for Early Triage and Patient Guidance</h1>
+          <p class="lead">A clinic-grade digital portal combining backend AI classification, structured disease knowledge, and patient-safe educational pathways.</p>
+          <div class="actions">
+            <a class="btn btn-primary" href="diagnose.html">Start Clinical Review</a>
+            <a class="btn btn-outline" href="diseases.html">Explore Knowledge Base</a>
+          </div>
+        </div>
+
+        <aside class="card glass stack reveal reveal-scale" aria-label="Platform highlights">
+          <h2>Why teams use this interface</h2>
+          <ul class="plain-list">
+            <li><span class="icon" data-icon="check"></span>Structured triage-first workflow</li>
+            <li><span class="icon" data-icon="check"></span>Arabic-ready patient education</li>
+            <li><span class="icon" data-icon="check"></span>Accessible, responsive, low-friction UX</li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section reveal reveal-up">
+      <div class="container">
+        <div class="section-head">
+          <h2>How It Works</h2>
+          <p>Designed to support safe interpretation and next-step awareness.</p>
+        </div>
+        <div class="grid grid-3 stagger">
+          <article class="card tilt-card stack">
+            <h3><span class="icon" data-icon="upload"></span>1) Acquire Image</h3>
+            <p class="small">Capture and upload a clear anterior segment image, preferably slit-lamp quality.</p>
+          </article>
+          <article class="card tilt-card stack">
+            <h3><span class="icon" data-icon="activity"></span>2) Analyze</h3>
+            <p class="small">Generate class probabilities and contextual risk labeling for educational triage.</p>
+          </article>
+          <article class="card tilt-card stack">
+            <h3><span class="icon" data-icon="shield"></span>3) Review Safely</h3>
+            <p class="small">Interpret findings with clinical caveats and immediate guidance pathways.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal reveal-up">
+      <div class="container">
+        <div class="section-head">
+          <h2>Supported Conditions</h2>
+          <p>Core disease cards are loaded dynamically from the backend knowledge base.</p>
+        </div>
+        <div id="home-diseases" class="grid grid-4 stagger"></div>
+      </div>
+    </section>
+
+    <section class="section reveal reveal-left">
+      <div class="container">
+        <div class="section-head">
+          <h2>Clinical Workflow Timeline</h2>
+          <p>From intake to physician escalation.</p>
+        </div>
+        <ol class="timeline">
+          <li><strong>Upload</strong><span>Capture and submit ocular image.</span></li>
+          <li><strong>AI Review</strong><span>Model-based classification with confidence profile.</span></li>
+          <li><strong>Clinical Interpretation</strong><span>Review risk indicators and red flags.</span></li>
+          <li><strong>Doctor Follow-up</strong><span>Escalate when urgent signs are detected.</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section reveal reveal-right">
+      <div class="container">
+        <div class="section-head">
+          <h2>Clinical Feedback Themes</h2>
+          <p>Representative user impressions from internal demos.</p>
+        </div>
+        <div class="grid grid-3 stagger">
+          <blockquote class="card quote">"The guided result narrative reduced uncertainty for non-specialist staff."</blockquote>
+          <blockquote class="card quote">"Arabic education blocks improved patient understanding during triage."</blockquote>
+          <blockquote class="card quote">"The workflow feels professional and practical for teaching use."</blockquote>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal reveal-scale">
+      <div class="container">
+        <div class="card stack" style="text-align:center;">
+          <h2>Move from Image Upload to Safer Decisions</h2>
+          <p class="small">Use the diagnosis workspace to review model outputs and patient guidance.</p>
+          <div class="actions" style="justify-content:center;">
+            <a class="btn btn-primary" href="diagnose.html">Open Diagnosis Workspace</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <button id="back-to-top" class="back-to-top" type="button" aria-label="Back to top"><span class="icon" data-icon="chevron"></span></button>
+  <div id="toast-root" class="toast-root" aria-live="polite" aria-atomic="true"></div>
+  <footer class="footer"><div class="container"><p>Educational platform interface only. Not a substitute for licensed medical diagnosis.</p></div></footer>
+</body>
+</html>
