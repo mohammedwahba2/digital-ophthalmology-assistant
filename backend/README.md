@@ -2,222 +2,391 @@
 
 FastAPI-based backend for AI-powered anterior eye disease classification.
 
-## Features
+> **Note**: This README provides complete step-by-step instructions to set up and run the project from scratch. **No Docker required** - everything runs natively with Python.
 
-- **ML Inference**: MobileNetV2-based eye disease classification
+---
+
+## 📋 Table of Contents
+
+1. [Features](#features)
+2. [Prerequisites](#prerequisites)
+3. [Installation (Step by Step)](#installation-step-by-step)
+4. [Running the Server](#running-the-server)
+5. [API Documentation](#api-documentation)
+6. [Configuration](#configuration)
+7. [Project Structure](#project-structure)
+8. [ML Model Setup](#ml-model-setup)
+9. [Troubleshooting](#troubleshooting)
+
+---
+
+## ✨ Features
+
+- **ML Inference**: Eye disease classification using deep learning
 - **RESTful API**: Full CRUD operations for predictions, content, and library
-- **Database**: SQLite (dev) / PostgreSQL (prod) with SQLAlchemy ORM
-- **Image Upload**: Secure file upload with validation
+- **Database**: SQLite (development) / PostgreSQL (production) with SQLAlchemy ORM
+- **Image Upload**: Secure file upload with validation (size, format)
 - **CORS Support**: Configurable cross-origin requests
+- **Production Ready**: Logging, error handling, thread-safe ML inference
 
-## Quick Start
+---
 
-### Prerequisites
+## 🛠 Prerequisites
 
-- Python 3.11+
-- pip or poetry
+Before you begin, ensure you have:
 
-### Installation
+- **Python 3.11+** (download from [python.org](https://www.python.org/downloads/))
+- **pip** (comes with Python)
+- **Git** (for cloning the repository)
 
+### Check your Python version:
 ```bash
-# Clone repository
-git clone <repo-url>
-cd digital-ophthalmology-assistant/backend
-
-# Create virtual environment
-python -m venv .venv
-
-# Activate virtual environment
-# On macOS/Linux:
-source .venv/bin/activate
-# On Windows:
-.venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Copy environment file
-cp .env.example .env
-
-# Edit .env with your configuration (optional)
+python --version  # Should be 3.11 or higher
 ```
 
-### Running the Server
+---
+
+## 📦 Installation (Step by Step)
+
+### Step 1: Clone the Repository
 
 ```bash
-# Development mode (with auto-reload)
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# Clone the repository
+git clone <repository-url>
 
-# Production mode
+# Navigate to the backend directory
+cd digital-ophthalmology-assistant/backend
+```
+
+### Step 2: Create Virtual Environment
+
+```bash
+# Create a virtual environment named .venv
+python -m venv .venv
+```
+
+### Step 3: Activate Virtual Environment
+
+**On macOS/Linux:**
+```bash
+source .venv/bin/activate
+```
+
+**On Windows (Command Prompt):**
+```cmd
+.venv\Scripts\activate
+```
+
+**On Windows (PowerShell):**
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+> You should see `(.venv)` at the beginning of your terminal prompt.
+
+### Step 4: Install Dependencies
+
+```bash
+# Install all required packages
+pip install -r requirements.txt
+```
+
+This will install:
+- FastAPI
+- Uvicorn (web server)
+- SQLAlchemy (database ORM)
+- Pydantic (data validation)
+- TensorFlow CPU (ML inference)
+- Pillow (image processing)
+- NumPy (numerical operations)
+
+### Step 5: Set Up Environment Variables
+
+```bash
+# Copy the example environment file
+cp .env.example .env
+
+# (Optional) Edit .env with your settings
+# Most settings have sensible defaults
+```
+
+### Step 6: Add the ML Model
+
+**Important**: The model file is NOT included in the repository. You need to add it:
+
+1. Create the models directory if it doesn't exist:
+   ```bash
+   mkdir -p models
+   ```
+
+2. Place your trained model file at:
+   ```
+   backend/models/eye_disease_final_cropped.keras
+   ```
+
+3. Verify the model exists:
+   ```bash
+   ls -la models/
+   ```
+
+---
+
+## 🚀 Running the Server
+
+### Development Mode (with auto-reload)
+
+```bash
+# Make sure you're in the backend directory and .venv is activated
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Production Mode
+
+```bash
+# With multiple workers for better performance
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
-**Server**: http://127.0.0.1:8000  
-**API Docs**: http://127.0.0.1:8000/docs  
-**ReDoc**: http://127.0.0.1:8000/redoc
+### Verify the Server is Running
 
-## Docker Deployment
+Open your browser and visit:
+- **API Root**: http://127.0.0.1:8000
+- **API Docs (Swagger)**: http://127.0.0.1:8000/docs
+- **ReDoc**: http://127.0.0.1:8000/redoc
+- **Health Check**: http://127.0.0.1:8000/health
 
-```bash
-# Build image
-docker build -t ophthalmology-api .
+You should see a welcome message or the interactive API documentation.
 
-# Run container
-docker run -d \
-  -p 8000:8000 \
-  -v $(pwd)/models:/app/models \
-  -v $(pwd)/uploads:/app/uploads \
-  -v $(pwd)/predictions.db:/app/predictions.db \
-  ophthalmology-api
-```
+---
 
-## API Endpoints
+## 📖 API Documentation
 
-### Health & Info
-- `GET /` - API information
-- `GET /health` - Health check
+### Interactive Documentation
 
-### Prediction
-- `POST /predict` - Upload image and get prediction
+FastAPI provides automatic interactive documentation:
 
-### Results
-- `GET /api/v1/results` - List all predictions (with filters)
-- `GET /api/v1/results/{id}` - Get specific prediction
-- `DELETE /api/v1/results/{id}` - Delete prediction
+- **Swagger UI**: http://127.0.0.1:8000/docs
+  - Interactive interface to test all endpoints
+  - Shows request/response schemas
+  - Allows you to try out API calls directly
 
-### Content Management
-- `GET /api/v1/content` - List content sections
-- `GET /api/v1/content/{type}` - Get section by type
-- `POST /api/v1/content` - Create content section
-- `PUT /api/v1/content/{id}` - Update content section
-- `DELETE /api/v1/content/{id}` - Delete content section
+- **ReDoc**: http://127.0.0.1:8000/redoc
+  - Clean, readable documentation
+  - Good for sharing with team members
 
-### Disease Library
-- `GET /api/v1/library` - List diseases (with search/filters)
-- `GET /api/v1/library/{id}` - Get disease details
-- `POST /api/v1/library` - Add disease to library
-- `PUT /api/v1/library/{id}` - Update disease
-- `DELETE /api/v1/library/{id}` - Remove disease
+### Key Endpoints
 
-### Questions
-- `GET /api/v1/questions` - List questions
-- `POST /api/v1/questions` - Create question
-- `PUT /api/v1/questions/{id}` - Update question
-- `DELETE /api/v1/questions/{id}` - Delete question
+#### Health & Info
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | API information |
+| GET | `/health` | Health check |
 
-## Configuration
+#### Prediction
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/predict` | Upload image and get prediction |
 
-Copy `.env.example` to `.env` and configure:
+#### Results (Prediction History)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/results` | List all predictions |
+| GET | `/api/v1/results/{id}` | Get specific prediction |
+| DELETE | `/api/v1/results/{id}` | Delete prediction |
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `HOST` | Server host | `0.0.0.0` |
-| `PORT` | Server port | `8000` |
-| `DEBUG` | Debug mode | `false` |
-| `DATABASE_URL` | Database connection string | SQLite at `predictions.db` |
-| `MODEL_PATH` | Path to ML model | `models/eye_disease_final_cropped.keras` |
-| `UPLOAD_DIR` | Upload directory | `uploads/` |
-| `MAX_UPLOAD_SIZE_MB` | Max file size | `10` |
+#### Content Management
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/content` | List content sections |
+| GET | `/api/v1/content/{type}` | Get section by type |
+| POST | `/api/v1/content` | Create content section |
+| PUT | `/api/v1/content/{id}` | Update content section |
+| DELETE | `/api/v1/content/{id}` | Delete content section |
 
-## Project Structure
+#### Disease Library
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/library` | List diseases (with search) |
+| GET | `/api/v1/library/{id}` | Get disease details |
+| POST | `/api/v1/library` | Add disease to library |
+| PUT | `/api/v1/library/{id}` | Update disease |
+| DELETE | `/api/v1/library/{id}` | Remove disease |
+
+---
+
+## ⚙️ Configuration
+
+Copy `.env.example` to `.env` and configure as needed:
+
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `HOST` | Server host | `0.0.0.0` | `127.0.0.1` |
+| `PORT` | Server port | `8000` | `8080` |
+| `DEBUG` | Debug mode | `false` | `true` |
+| `DATABASE_URL` | Database connection | SQLite | `postgresql://user:pass@localhost/db` |
+| `MODEL_PATH` | Path to ML model | `models/eye_disease_final_cropped.keras` | `/custom/path/model.keras` |
+| `UPLOAD_DIR` | Upload directory | `uploads/` | `/var/uploads` |
+| `MAX_UPLOAD_SIZE_MB` | Max file size | `10` | `20` |
+| `CORS_ORIGINS` | Allowed origins | `["*"]` | `["https://mydomain.com"]` |
+
+---
+
+## 📁 Project Structure
 
 ```
 backend/
 ├── app/
-│   ├── __init__.py
-│   ├── main.py           # FastAPI application
-│   ├── config.py         # Configuration management
+│   ├── __init__.py           # Package initializer
+│   ├── main.py               # FastAPI application entry point
+│   ├── config.py             # Configuration management
+│   │
 │   ├── database/
 │   │   ├── __init__.py
-│   │   └── db.py         # Database setup
-│   ├── models/
+│   │   └── db.py             # Database setup & session management
+│   │
+│   ├── models/               # SQLAlchemy database models
 │   │   ├── __init__.py
-│   │   ├── prediction.py # Prediction model
-│   │   ├── library_item.py
-│   │   ├── question.py
-│   │   └── section.py
-│   ├── routes/
+│   │   ├── prediction.py     # Prediction record model
+│   │   ├── library_item.py   # Disease library model
+│   │   ├── question.py       # Questions model
+│   │   └── section.py        # Content sections model
+│   │
+│   ├── routes/               # API endpoints
 │   │   ├── __init__.py
-│   │   ├── predict.py    # Prediction endpoint
-│   │   ├── results.py    # Results endpoints
-│   │   ├── content.py    # Content management
-│   │   ├── library.py    # Disease library
-│   │   └── questions.py  # Questions CRUD
-│   ├── services/
+│   │   ├── predict.py        # Prediction endpoint
+│   │   ├── results.py        # Results CRUD endpoints
+│   │   ├── content.py        # Content management endpoints
+│   │   ├── library.py        # Disease library endpoints
+│   │   └── questions.py      # Questions CRUD endpoints
+│   │
+│   ├── services/             # Business logic
 │   │   ├── __init__.py
-│   │   ├── ai_service.py # ML inference
-│   │   └── seed_service.py # Initial data
-│   └── uploads/          # Uploaded images
-├── models/               # ML model files (not in repo)
-├── requirements.txt
-├── Dockerfile
-└── .env.example
+│   │   ├── ai_service.py     # ML inference service
+│   │   └── seed_service.py   # Database seeding
+│   │
+│   └── uploads/              # Uploaded images (created automatically)
+│
+├── models/                   # ML model files (NOT in repo - add manually)
+│   └── eye_disease_final_cropped.keras
+│
+├── .env.example              # Environment variables template
+├── .gitignore                # Git exclusions
+├── requirements.txt          # Python dependencies
+└── README.md                 # This file
 ```
 
-## ML Model
+---
 
-The backend uses a MobileNetV2-based model for classifying anterior eye diseases:
+## 🧠 ML Model Setup
 
-- **Input**: 224x224 RGB images
-- **Classes**: healthy_eye, conjunctivitis, cataract, keratitis
-- **Preprocessing**: Center crop (60%), resize, MobileNetV2 normalization
+### Model Requirements
 
-Place your trained model at:
+- **Format**: Keras (.keras or .h5)
+- **Input Size**: 224×224 pixels
+- **Input Type**: RGB images
+- **Architecture**: MobileNetV2-based
+
+### Preprocessing Pipeline
+
+The model expects images preprocessed as follows:
+1. Center crop (60% of original image)
+2. Resize to 224×224
+3. Normalize pixel values to [0, 1] (divide by 255)
+4. Expand dimensions for batch inference
+
+### Model Classes
+
+The model classifies into 4 categories:
+1. `healthy_eye` - Normal/healthy eye
+2. `Conjunctivitis Recognition` - Conjunctivitis
+3. `Cataract dataset` - Cataract
+4. `keratitis` - Keratitis
+
+### Adding Your Model
+
+1. Create the models directory:
+   ```bash
+   mkdir -p models
+   ```
+
+2. Place your model file:
+   ```bash
+   cp /path/to/your/trained/model.keras models/eye_disease_final_cropped.keras
+   ```
+
+3. Verify the model exists:
+   ```bash
+   ls -la models/
+   ```
+
+---
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### 1. "ModuleNotFoundError: No module named 'fastapi'"
+**Solution**: Make sure your virtual environment is activated:
+```bash
+source .venv/bin/activate  # macOS/Linux
+# or
+.venv\Scripts\activate     # Windows
+```
+
+#### 2. "Address already in use" error
+**Solution**: Another process is using port 8000. Either:
+- Kill the process using port 8000
+- Use a different port: `uvicorn app.main:app --port 8001`
+
+#### 3. "Model file not found"
+**Solution**: Make sure the model file exists at:
 ```
 backend/models/eye_disease_final_cropped.keras
 ```
 
-## Production Deployment
-
-### Using Gunicorn (Linux)
-
+#### 4. "Permission denied" when creating directories
+**Solution**: Run with appropriate permissions or create directories manually:
 ```bash
-gunicorn app.main:app \
-  --workers 4 \
-  --worker-class uvicorn.workers.UvicornWorker \
-  --bind 0.0.0.0:8000 \
-  --timeout 120
+mkdir -p models uploads
 ```
 
-### Using Render/Railway
-
-1. Set build command: `pip install -r requirements.txt`
-2. Set start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-3. Add environment variables from `.env.example`
-4. Upload model file separately or use a storage service
-
-### Environment Variables for Production
-
+#### 5. TensorFlow import errors
+**Solution**: Ensure you have the correct Python version (3.11) and try:
 ```bash
-# Database (PostgreSQL recommended)
-DATABASE_URL=postgresql://user:pass@host:5432/dbname
-
-# CORS (restrict to your frontend domain)
-CORS_ORIGINS=["https://yourdomain.com"]
-
-# Disable debug
-DEBUG=false
+pip uninstall tensorflow tensorflow-cpu
+pip install tensorflow-cpu==2.15.0
 ```
 
-## Development
+### Getting Help
 
-```bash
-# Install dev dependencies (optional)
-pip install pytest pytest-asyncio httpx black ruff mypy
+If you encounter issues not listed here:
 
-# Run tests
-pytest
+1. Check the logs (they appear in the terminal where you ran uvicorn)
 
-# Format code
-black app/
+2. Verify your environment:
+   ```bash
+   python --version
+   pip list
+   ```
 
-# Lint
-ruff check app/
+3. Test the database:
+   ```bash
+   # The database is created automatically on first run
+   # Check if predictions.db exists in backend/
+   ls -la predictions.db
+   ```
 
-# Type check
-mypy app/
-```
+---
 
-## License
+## 📄 License
 
 Proprietary - Delta University for Science and Technology
+
+---
+
+## 👥 Credits
+
+Developed by the AI-Based Eye Disease Classification Team at Delta University for Science and Technology.
+
+**Supervisor**: Dr. Eman Salah  
+**Team Members**: Fares Tamer, Israa Eldsouky, Mohamed Ayman, Mohamed Mahmoud, Karim Saeed, Rawan Elsaid, Ohoud Abdelnaem, Sama Abdeltawab, Waad Ahmed, Wesam Mohamed, Zeyad Waleed
