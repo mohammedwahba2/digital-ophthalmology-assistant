@@ -1,28 +1,67 @@
-# Virtual env
+# Python virtual environments
 .venv/
 venv/
+env/
+ENV/
 
 # Python cache
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
+*.so
+.Python
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
-# OS files
+# OS
 .DS_Store
+Thumbs.db
 
-# Env variables
+# Environment variables
 .env
 
-# ML / heavy files (VERY IMPORTANT)
+# ML / heavy files
 models/
 *.h5
 *.keras
 *.pt
 *.pth
+*.onnx
+*.pb
+*.tflite
 
-# logs
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
 *.log
+logs/
+
+# Uploads
+uploads/
+
+# Jupyter notebooks
+*.ipynb
+
+# Type checker
+.mypy_cache/
+.pytype/
+
+# Node modules (frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+dist/
+build/
+*.egg-info/

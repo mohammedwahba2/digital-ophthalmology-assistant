@@ -1,13 +1,17 @@
+"""Digital Ophthalmology Assistant - FastAPI Application.
+
+Main application entry point with middleware, routes, and startup/shutdown events.
+"""
+
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.database.db import Base, engine
-from app.database.db import SessionLocal
-from app.models import library_item as _library_item_model  # noqa: F401
-from app.models import prediction as _prediction_model  # noqa: F401
-from app.models import question as _question_model  # noqa: F401
-from app.models import section as _section_model  # noqa: F401
+from app.config import get_settings
+from app.database.db import get_db, init_db
 from app.routes.content import router as content_router
 from app.routes.library import router as library_router
 from app.routes.predict import router as predict_router
@@ -15,47 +19,117 @@ from app.routes.questions import router as questions_router
 from app.routes.results import router as results_router
 from app.services.seed_service import seed_content
 
-app = FastAPI(title="Prediction Backend", version="1.0.0")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
+logger = logging.getLogger(__name__)
+
+# Load settings
+settings = get_settings()
 
 
-@app.on_event("startup")
-def startup():
-    Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager for startup and shutdown events."""
+    # Startup
+    logger.info("Starting up Digital Ophthalmology Assistant...")
+
+    # Initialize database
+    init_db()
+    logger.info("Database initialized")
+
+    # Seed initial content
+    db = next(get_db())
     try:
         seed_content(db)
+        logger.info("Database seeded with initial content")
+    except Exception as e:
+        logger.warning(f"Failed to seed database: {e}")
     finally:
         db.close()
 
+    # Preload ML model
+    try:
+        from app.services.ai_service import get_model  # noqa: PLC0415
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+        get_model(settings.resolved_model_path)
+        logger.info(f"ML model loaded from {settings.resolved_model_path}")
+    except FileNotFoundError:
+        logger.warning("ML model not found. Prediction endpoint will fail until model is added.")
+    except Exception as e:
+        logger.warning(f"Failed to preload ML model: {e}")
+
+    logger.info(f"Server ready at http://{settings.host}:{settings.port}")
+
+    yield
+
+    # Shutdown
+    logger.info("Shutting down...")
 
 
-@app.get("/")
-def root():
-    return {"message": "Backend server is running"}
+# Create FastAPI application
+app = FastAPI(
+    title=settings.app_name,
+    version=settings.app_version,
+    description="AI-powered ophthalmology assistant for anterior eye disease classification",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+    lifespan=lifespan,
+)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=settings.cors_allow_credentials,
+    allow_methods=settings.cors_allow_methods,
+    allow_headers=settings.cors_allow_headers,
+)
 
 
+# Health check endpoint
+@app.get("/health", tags=["health"])
+async def health_check():
+    """Health check endpoint for monitoring and load balancers."""
+    return {"status": "healthy", "version": settings.app_version}
+
+
+# Root endpoint
+@app.get("/", tags=["root"])
+async def root():
+    """Root endpoint with API information."""
+    return {
+        "name": settings.app_name,
+        "version": settings.app_version,
+        "docs": "/docs",
+        "health": "/health",
+    }
+
+
+# Custom exception handlers
 @app.exception_handler(HTTPException)
 async def http_exception_handler(_: Request, exc: HTTPException):
-    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+    """Handle HTTP exceptions with consistent format."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail, "status_code": exc.status_code},
+    )
 
 
 @app.exception_handler(Exception)
-async def unhandled_exception_handler(_: Request, exc: Exception):
-    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """Handle unhandled exceptions with logging."""
+    logger.error(f"Unhandled exception in {request.method} {request.url}: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "status_code": 500},
+    )
 
 
+# Include routers
 app.include_router(predict_router)
 app.include_router(results_router)
 app.include_router(questions_router)

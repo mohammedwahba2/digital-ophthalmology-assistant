@@ -1,0 +1,40 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+
+# Database
+*.db
+*.sqlite
+
+# ML models (add separately if needed)
+models/
+
+# Uploads
+uploads/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
