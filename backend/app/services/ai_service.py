@@ -134,10 +134,8 @@ def preprocess_image(image_path: str | Path) -> np.ndarray:
         # Convert to numpy array
         array = np.asarray(image, dtype=np.float32)
 
-        # Apply MobileNetV2 preprocessing
-        if _preprocess_fn is None:
-            _load_tensorflow_components()
-        array = _preprocess_fn(array)
+        # Normalize to [0, 1]
+        array = array / 255.0
 
         # Expand dimensions for batch (1, 224, 224, 3)
         return np.expand_dims(array, axis=0)
