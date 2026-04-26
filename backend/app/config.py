@@ -44,9 +44,16 @@ class Settings(BaseSettings):
 
     @property
     def resolved_model_path(self) -> Path:
-        """Get the resolved model path, defaulting to the standard location."""
+        """Get the resolved model path, defaulting to the standard location.
+        
+        Default path: backend/models/eye_disease_final_cropped.keras
+        Can be overridden via MODEL_PATH environment variable.
+        """
         if self.model_path:
             return self.model_path
+        # Path(__file__) = backend/app/config.py
+        # .parents[2] = backend/
+        # + "models/eye_disease_final_cropped.keras"
         return Path(__file__).resolve().parents[2] / "models" / "eye_disease_final_cropped.keras"
 
     @property
