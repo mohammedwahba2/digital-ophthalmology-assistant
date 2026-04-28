@@ -7,6 +7,7 @@ with thread-safe singleton pattern for model management.
 import threading
 from pathlib import Path
 from typing import TYPE_CHECKING
+from huggingface_hub import snapshot_download
 
 import numpy as np
 from PIL import Image
@@ -68,8 +69,12 @@ def get_model(model_path: Path) -> "tf.keras.Model":
 
         try:
             tf = _load_tensorflow_components()
-            _model_cache = tf.keras.models.load_model(str(model_path))
+            # _model_cache = tf.keras.models.load_model(str(model_path))
             # Warm up the model with a dummy input to avoid cold start latency
+            local_dir = snapshot_download(repo_id="mohamed-wahba77/eye-disease-model")
+            model_dir = Path(local_dir)
+            # _model_cache.predict(np.zeros((1, IMG_SIZE, IMG_SIZE, 3)), verbose=0)
+            _model_cache = tf.keras.models.load_model(str(model_dir))
             _model_cache.predict(np.zeros((1, IMG_SIZE, IMG_SIZE, 3)), verbose=0)
         except Exception as e:
             raise RuntimeError(f"Failed to load model from {model_path}: {e}") from e
