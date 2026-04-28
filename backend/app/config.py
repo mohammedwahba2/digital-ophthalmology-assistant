@@ -34,8 +34,11 @@ class Settings(BaseSettings):
     cors_allow_methods: list[str] = ["*"]
     cors_allow_headers: list[str] = ["*"]
 
-    # ML Model
-    model_path: Path | None = None
+    # =========================
+    # 🔥 ML MODEL (HUGGING FACE)
+    # =========================
+    model_repo_id: str = "mohamed-wahba77/eye-disease-model"
+    model_filename: str = "model.keras"
 
     # File Upload
     upload_dir: Path | None = None
@@ -43,33 +46,19 @@ class Settings(BaseSettings):
     allowed_extensions: set[str] = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 
     @property
-    def resolved_model_path(self) -> Path:
-        """Get the resolved model path, defaulting to the standard location.
-        
-        Default path: backend/models/eye_disease_final_cropped.keras
-        Can be overridden via MODEL_PATH environment variable.
-        """
-        if self.model_path:
-            return self.model_path
-        # Path(__file__) = backend/app/config.py
-        # .parents[2] = backend/
-        # + "models/eye_disease_final_cropped.keras"
-        return Path(__file__).resolve().parents[2] / "models" / "eye_disease_final_cropped.keras"
-
-    @property
     def resolved_upload_dir(self) -> Path:
-        """Get the resolved upload directory, defaulting to the standard location."""
+        """Get upload directory."""
         if self.upload_dir:
             return self.upload_dir
         return Path(__file__).resolve().parents[2] / "uploads"
 
     @property
     def max_upload_size_bytes(self) -> int:
-        """Get max upload size in bytes."""
+        """Convert MB to bytes."""
         return self.max_upload_size_mb * 1024 * 1024
 
 
 @lru_cache
 def get_settings() -> Settings:
-    """Get cached settings instance."""
+    """Cached settings instance."""
     return Settings()

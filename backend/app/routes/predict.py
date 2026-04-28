@@ -21,21 +21,10 @@ router = APIRouter(tags=["predict"])
 
 
 def _validate_image(content: bytes) -> Image.Image:
-    """Validate and return image from bytes.
-
-    Args:
-        content: Raw image bytes.
-
-    Returns:
-        Validated PIL Image.
-
-    Raises:
-        HTTPException: If image is invalid or corrupted.
-    """
+    """Validate and return image from bytes."""
     try:
         img = Image.open(BytesIO(content))
-        img.verify()  # Verify it's a valid image
-        # Re-open after verify (verify can leave image in bad state)
+        img.verify()
         img = Image.open(BytesIO(content))
         return img
     except (UnidentifiedImageError, OSError, SyntaxError) as e:
@@ -49,100 +38,90 @@ def _validate_image(content: bytes) -> Image.Image:
     "/predict",
     response_model=dict[str, str | float],
     summary="Predict eye disease from image",
-    description="Upload an eye image to get a disease prediction with confidence score.",
-    responses={
-        200: {"description": "Successful prediction"},
-        400: {"description": "Invalid or missing image file"},
-        413: {"description": "File too large"},
-        415: {"description": "Unsupported file type"},
-        500: {"description": "Internal server error during prediction"},
-    },
 )
 async def run_prediction(
-    file: UploadFile = File(
-        ...,
-        description="Eye image file (JPG, JPEG, PNG, BMP, or WEBP)",
-    ),
+    file: UploadFile = File(...),
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> dict[str, str | float]:
-    """Run prediction on uploaded eye image.
 
-    Args:
-        file: Uploaded image file.
-        db: Database session.
-        settings: Application settings.
-
-    Returns:
-        Dictionary with 'label' and 'confidence' keys.
-
-    Raises:
-        HTTPException: For various error conditions.
-    """
-    # Validate filename
+    # -------------------------
+    # 1. Validate file
+    # -------------------------
     if not file.filename:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Missing filename in upload",
         )
 
-    # Validate file extension
     suffix = Path(file.filename).suffix.lower()
+
     if suffix not in settings.allowed_extensions:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail=f"Unsupported file extension '{suffix}'. Allowed: {settings.allowed_extensions}",
+            detail=f"Unsupported file type: {suffix}",
         )
 
-    # Read file content
     content = await file.read()
 
-    # Validate content is not empty
     if not content:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Empty file received",
         )
 
-    # Check file size
     if len(content) > settings.max_upload_size_bytes:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File size exceeds maximum of {settings.max_upload_size_mb}MB",
+            detail="File too large",
         )
 
-    # Validate image format
+    # -------------------------
+    # 2. Validate image
+    # -------------------------
     _validate_image(content)
 
-    # Generate unique filename and save
-    file_path = settings.resolved_upload_dir / f"{uuid.uuid4()}{suffix}"
-    settings.resolved_upload_dir.mkdir(parents=True, exist_ok=True)
+    # -------------------------
+    # 3. Save file
+    # -------------------------
+    upload_dir = settings.resolved_upload_dir
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    file_path = upload_dir / f"{uuid.uuid4()}{suffix}"
     file_path.write_bytes(content)
 
-    # Run prediction
+    # -------------------------
+    # 4. Prediction (DL MODEL)
+    # -------------------------
     try:
-        label, confidence = predict_image(str(file_path))
-    except FileNotFoundError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
-    except Exception as e:
+        label, confidence = predict_image(file_path)
+    except FileNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Prediction failed. Please try again.",
-        ) from e
+            detail="Model not found on HuggingFace Hub",
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Prediction failed",
+        )
 
-    # Log prediction to database
+    # -------------------------
+    # 5. Save to DB
+    # -------------------------
     record = Prediction(
         image_path=str(file_path),
         prediction=label,
         confidence=confidence,
     )
+
     db.add(record)
     db.commit()
     db.refresh(record)
 
+    # -------------------------
+    # 6. Response
+    # -------------------------
     return {
         "label": label,
         "confidence": round(confidence, 4),
