@@ -50,16 +50,16 @@ async def lifespan(app: FastAPI):
     finally:
         db.close()
 
-    # Preload ML model
+    # Preload DL model
     try:
         from app.services.ai_service import get_model  # noqa: PLC0415
 
         get_model(settings.resolved_model_path)
-        logger.info(f"ML model loaded from {settings.resolved_model_path}")
+        logger.info(f"DL model loaded from {settings.resolved_model_path}")
     except FileNotFoundError:
-        logger.warning("ML model not found. Prediction endpoint will fail until model is added.")
+        logger.warning("DL model not found. Prediction endpoint will fail until model is added.")
     except Exception as e:
-        logger.warning(f"Failed to preload ML model: {e}")
+        logger.warning(f"Failed to preload DL model: {e}")
 
     logger.info(f"Server ready at http://{settings.host}:{settings.port}")
 

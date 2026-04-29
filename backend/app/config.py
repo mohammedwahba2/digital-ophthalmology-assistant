@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     cors_allow_headers: list[str] = ["*"]
 
     # =========================
-    # 🔥 ML MODEL (HUGGING FACE)
+    # 🔥 DL MODEL (HUGGING FACE HUB)
     # =========================
     model_repo_id: str = "mohamed-wahba77/eye-disease-model"
     model_filename: str = "model.keras"
@@ -56,6 +56,11 @@ class Settings(BaseSettings):
     def max_upload_size_bytes(self) -> int:
         """Convert MB to bytes."""
         return self.max_upload_size_mb * 1024 * 1024
+
+    @property
+    def resolved_model_path(self) -> Path:
+        """Get default local model path."""
+        return Path(__file__).resolve().parents[2] / "models" / self.model_filename
 
 
 @lru_cache

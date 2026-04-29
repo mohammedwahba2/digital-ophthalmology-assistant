@@ -1,9 +1,8 @@
-"""AI inference service for eye disease classification (Production Ready - HF Hub)."""
+"""AI inference service for eye disease classification (Deep Learning - HF Hub)."""
 
 import threading
 from pathlib import Path
-from typing import TYPE_CHECKING
-from huggingface_hub import snapshot_download
+from typing import Tuple
 
 import numpy as np
 from PIL import Image
@@ -27,7 +26,7 @@ MODEL_REPO = "mohamed-wahba77/eye-disease-model"
 MODEL_FILE = "model.keras"
 
 # ======================
-# Singleton Model
+# Singleton DL Model
 # ======================
 
 _model = None
@@ -35,15 +34,23 @@ _lock = threading.Lock()
 
 
 def _download_model() -> str:
-    """Download model from Hugging Face once."""
+    """Download DL model from Hugging Face Hub."""
     return hf_hub_download(
         repo_id=MODEL_REPO,
         filename=MODEL_FILE
     )
 
 
-def get_model() -> tf.keras.Model:
-    """Thread-safe singleton model loader."""
+def get_model(model_path: Path | str | None = None) -> tf.keras.Model:
+    """Thread-safe singleton DL model loader.
+    
+    Args:
+        model_path: Optional local path to the model file. If not provided,
+                   downloads from Hugging Face Hub.
+    
+    Returns:
+        Loaded TensorFlow Keras model.
+    """
     global _model
 
     if _model is not None:
@@ -53,33 +60,21 @@ def get_model() -> tf.keras.Model:
         if _model is not None:
             return _model
 
-        model_path = _download_model()
-        _model = tf.keras.models.load_model(model_path)
-
-        # warmup (important for DL latency)
-        _model.predict(np.zeros((1, IMG_SIZE, IMG_SIZE, 3)), verbose=0)
-
-    with _model_lock:
-        # Double-check after acquiring lock
-        if _model_cache is not None:
-            return _model_cache
-
+        if model_path is None:
+            # Download from Hugging Face Hub
+            model_path = _download_model()
+        
+        model_path = Path(model_path)
+        
         if not model_path.exists():
             raise FileNotFoundError(f"Model file not found at: {model_path}")
 
-        try:
-            tf = _load_tensorflow_components()
-            # _model_cache = tf.keras.models.load_model(str(model_path))
-            # Warm up the model with a dummy input to avoid cold start latency
-            local_dir = snapshot_download(repo_id="mohamed-wahba77/eye-disease-model")
-            model_dir = Path(local_dir)
-            # _model_cache.predict(np.zeros((1, IMG_SIZE, IMG_SIZE, 3)), verbose=0)
-            _model_cache = tf.keras.models.load_model(str(model_dir))
-            _model_cache.predict(np.zeros((1, IMG_SIZE, IMG_SIZE, 3)), verbose=0)
-        except Exception as e:
-            raise RuntimeError(f"Failed to load model from {model_path}: {e}") from e
+        _model = tf.keras.models.load_model(str(model_path))
 
-    return _model_cache
+        # Warmup (important for DL inference latency)
+        _model.predict(np.zeros((1, IMG_SIZE, IMG_SIZE, 3)), verbose=0)
+
+    return _model
 
 
 # ======================

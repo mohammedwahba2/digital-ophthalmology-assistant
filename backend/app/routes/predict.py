@@ -1,6 +1,6 @@
 """Prediction endpoint for eye disease classification.
 
-Handles image upload, validation, and ML inference with proper
+Handles image upload, validation, and DL inference with proper
 error handling and database logging.
 """
 
