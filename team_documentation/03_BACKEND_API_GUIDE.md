@@ -1,12 +1,12 @@
 # Backend API Technical Guide
 
-## 🔌 Overview
+##  Overview
 
 This document provides a comprehensive guide to the FastAPI backend, including all endpoints, data models, and implementation details.
 
 ---
 
-## 📋 Table of Contents
+##  Table of Contents
 
 1. [Architecture Overview](#architecture-overview)
 2. [Project Structure](#project-structure)
@@ -55,18 +55,18 @@ backend/
 │   ├── main.py                  # Application entry point
 │   ├── config.py                # Configuration management
 │   │
-│   ├── 📁 database/
+│   ├──  database/
 │   │   ├── __init__.py
 │   │   └── db.py                # Database connection & session
 │   │
-│   ├── 📁 models/               # SQLAlchemy ORM models
+│   ├──  models/               # SQLAlchemy ORM models
 │   │   ├── __init__.py
 │   │   ├── prediction.py        # Prediction records
 │   │   ├── library_item.py      # Disease library
 │   │   ├── section.py           # Content sections
 │   │   └── question.py          # FAQ items
 │   │
-│   ├── 📁 routes/               # API endpoints
+│   ├──  routes/               # API endpoints
 │   │   ├── __init__.py
 │   │   ├── predict.py           # POST /predict
 │   │   ├── results.py           # GET/DELETE /api/v1/results
@@ -74,7 +74,7 @@ backend/
 │   │   ├── content.py           # GET /api/v1/content
 │   │   └── questions.py         # GET /api/v1/questions
 │   │
-│   └── 📁 services/             # Business logic
+│   └──  services/             # Business logic
 │       ├── __init__.py
 │       ├── ai_service.py        # AI inference
 │       └── seed_service.py      # Database seeding

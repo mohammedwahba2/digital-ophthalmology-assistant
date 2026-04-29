@@ -1,12 +1,12 @@
 # Frontend Technical Guide
 
-## 🎨 Overview
+##  Overview
 
 This document provides a comprehensive guide to the web frontend, including architecture, pages, styling, and JavaScript functionality.
 
 ---
 
-## 📋 Table of Contents
+##  Table of Contents
 
 1. [Architecture Overview](#architecture-overview)
 2. [Project Structure](#project-structure)
@@ -51,7 +51,7 @@ User → HTML Page → CSS Styling → JavaScript Enhancement → API Calls → 
 
 ```
 frontend/
-├── 📁 pages/                    # HTML pages
+├──  pages/                    # HTML pages
 │   ├── index.html              # Homepage
 │   ├── diagnose.html           # AI diagnosis page
 │   ├── diseases.html           # Disease library
@@ -60,13 +60,13 @@ frontend/
 │   ├── safety.html             # Safety information
 │   └── education.html          # Patient education
 │
-├── 📁 styles/                   # CSS files
+├──  styles/                   # CSS files
 │   └── styles.css              # Main stylesheet (all styles)
 │
-├── 📁 js/                       # JavaScript files
+├──  js/                       # JavaScript files
 │   └── app.js                  # Main application script
 │
-├── 📁 assets/                   # Static assets
+├──  assets/                   # Static assets
 │   └── icons.js                # SVG icon definitions
 │
 └── README.md                   # Frontend documentation
@@ -745,12 +745,12 @@ location.reload();
 
 | Browser | Version | Support |
 |---------|---------|---------|
-| Chrome | 90+ | ✅ Full |
-| Firefox | 88+ | ✅ Full |
-| Safari | 14+ | ✅ Full |
-| Edge | 90+ | ✅ Full |
-| Mobile Safari | iOS 14+ | ✅ Full |
-| Chrome Mobile | Android 9+ | ✅ Full |
+| Chrome | 90+ |  Full |
+| Firefox | 88+ |  Full |
+| Safari | 14+ |  Full |
+| Edge | 90+ |  Full |
+| Mobile Safari | iOS 14+ |  Full |
+| Chrome Mobile | Android 9+ |  Full |
 
 ---
 

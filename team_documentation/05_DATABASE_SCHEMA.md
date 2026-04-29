@@ -1,12 +1,12 @@
 # Database Schema & Design Guide
 
-## 🗄️ Overview
+##  Overview
 
 This document provides a comprehensive guide to the database design, including schema, relationships, and data flow.
 
 ---
 
-## 📋 Table of Contents
+##  Table of Contents
 
 1. [Database Overview](#database-overview)
 2. [Entity Relationship Diagram](#entity-relationship-diagram)

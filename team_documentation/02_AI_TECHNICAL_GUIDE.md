@@ -1,12 +1,12 @@
 # AI/Deep Learning Technical Guide
 
-## 🤖 Overview
+##  Overview
 
 This document provides a comprehensive technical guide to the Deep Learning system used for eye disease classification.
 
 ---
 
-## 📋 Table of Contents
+##  Table of Contents
 
 1. [Model Architecture](#model-architecture)
 2. [Inference Pipeline](#inference-pipeline)

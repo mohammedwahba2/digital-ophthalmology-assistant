@@ -1,12 +1,12 @@
 # Digital Ophthalmology Assistant - Team Documentation
 
-## 📚 Complete Documentation Package
+##  Complete Documentation Package
 
 Welcome to the comprehensive documentation package for the Digital Ophthalmology Assistant graduation project. This documentation is designed to help every team member understand the complete project and prepare for discussions and presentations.
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### For New Team Members
 1. Start with **[01_PROJECT_OVERVIEW.md](01_PROJECT_OVERVIEW.md)** - Understand the complete project
@@ -24,7 +24,7 @@ Welcome to the comprehensive documentation package for the Digital Ophthalmology
 
 ---
 
-## 📖 Documentation Index
+##  Documentation Index
 
 | # | Document | Description | Target Audience |
 |---|----------|-------------|-----------------|
@@ -38,7 +38,7 @@ Welcome to the comprehensive documentation package for the Digital Ophthalmology
 
 ---
 
-## 🎯 What Each Team Member Should Know
+##  What Each Team Member Should Know
 
 ### All Team Members Must Understand:
 
@@ -79,7 +79,7 @@ Welcome to the comprehensive documentation package for the Digital Ophthalmology
 
 ---
 
-## 📋 Discussion Preparation Checklist
+##  Discussion Preparation Checklist
 
 ### 1 Week Before
 - [ ] Read all documentation relevant to your role
@@ -107,7 +107,7 @@ Welcome to the comprehensive documentation package for the Digital Ophthalmology
 
 ---
 
-## 🔗 Project Resources
+##  Project Resources
 
 ### Code Repository
 - **GitHub**: https://github.com/mohammedwahba2/digital-ophthalmology-assistant.git
@@ -147,7 +147,7 @@ digital-ophthalmology-assistant/
 
 ---
 
-## 💡 Quick Reference
+##  Quick Reference
 
 ### Project Stats
 | Metric | Value |
@@ -172,7 +172,7 @@ digital-ophthalmology-assistant/
 
 ---
 
-## 🆘 Getting Help
+##  Getting Help
 
 ### During Development
 1. Check the relevant technical guide first
@@ -188,7 +188,7 @@ digital-ophthalmology-assistant/
 
 ---
 
-## 📞 Team Contacts
+##  Team Contacts
 
 | Role | Name | Contact |
 |------|------|---------|
@@ -200,7 +200,7 @@ digital-ophthalmology-assistant/
 
 ---
 
-## 📝 Version History
+##  Version History
 
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
@@ -208,7 +208,7 @@ digital-ophthalmology-assistant/
 
 ---
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 This documentation was created to ensure every team member has a clear understanding of the project and can confidently present their work during discussions and the final presentation.
 

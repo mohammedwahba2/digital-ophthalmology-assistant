@@ -1,12 +1,12 @@
 # Team Roles & Responsibilities Guide
 
-## 👥 Overview
+##  Overview
 
 This document outlines team roles, responsibilities, and guidelines for effective collaboration on the Digital Ophthalmology Assistant project.
 
 ---
 
-## 📋 Table of Contents
+##  Table of Contents
 
 1. [Team Structure](#team-structure)
 2. [Role Descriptions](#role-descriptions)
@@ -309,7 +309,7 @@ screen reader support, proper ARIA labels, color contrast compliance].
 
 ### Presentation Tips
 
-#### Do's ✅
+#### Do's 
 - **Practice** multiple times as a team
 - **Speak clearly** and maintain eye contact
 - **Use visuals** (slides, diagrams, demos)
@@ -317,7 +317,7 @@ screen reader support, proper ARIA labels, color contrast compliance].
 - **Time your presentation** to stay within limits
 - **Prepare backup** (recorded demo, extra slides)
 
-#### Don'ts ❌
+#### Don'ts 
 - Don't read directly from slides
 - Don't exceed time limits
 - Don't use too much technical jargon

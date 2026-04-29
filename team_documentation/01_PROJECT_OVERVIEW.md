@@ -1,12 +1,12 @@
 # Digital Ophthalmology Assistant - Complete Project Overview
 
-## 🎯 Project Vision
+##  Project Vision
 
 An AI-powered clinical decision support system for anterior eye disease classification, designed to assist ophthalmologists and healthcare providers in early detection and diagnosis of common eye conditions.
 
 ---
 
-## 📋 Table of Contents
+##  Table of Contents
 
 1. [Executive Summary](#executive-summary)
 2. [System Architecture](#system-architecture)
@@ -161,28 +161,28 @@ A full-stack web application that uses **Deep Learning** to analyze eye images a
 ```
 digital-ophthalmology-assistant/
 │
-├── 📁 backend/                          # Python FastAPI Backend
-│   ├── 📁 app/
+├──  backend/                          # Python FastAPI Backend
+│   ├──  app/
 │   │   ├── main.py                     # Application entry point
 │   │   ├── config.py                   # Configuration management
 │   │   ├── __init__.py                 # Package initialization
 │   │   │
-│   │   ├── 📁 services/                # Business Logic
-│   │   │   ├── ai_service.py          # 🤖 AI/ML Service (Deep Learning)
+│   │   ├──  services/                # Business Logic
+│   │   │   ├── ai_service.py          #  AI/ML Service (Deep Learning)
 │   │   │   └── seed_service.py        # Database seeding
 │   │   │
-│   │   ├── 📁 routes/                  # API Endpoints
+│   │   ├──  routes/                  # API Endpoints
 │   │   │   ├── predict.py             # Prediction endpoint
 │   │   │   ├── results.py             # History management
 │   │   │   ├── library.py             # Disease library
 │   │   │   ├── content.py             # Educational content
 │   │   │   └── questions.py           # Q&A functionality
 │   │   │
-│   │   ├── 📁 database/                # Database Layer
+│   │   ├──  database/                # Database Layer
 │   │   │   ├── db.py                  # Database connection
 │   │   │   └── __init__.py
 │   │   │
-│   │   └── 📁 models/                  # Database Models (SQLAlchemy)
+│   │   └──  models/                  # Database Models (SQLAlchemy)
 │   │       ├── prediction.py          # Prediction records
 │   │       ├── library_item.py        # Disease information
 │   │       ├── section.py             # Content sections
@@ -194,8 +194,8 @@ digital-ophthalmology-assistant/
 │   ├── Dockerfile                     # Container configuration
 │   └── README.md                      # Backend documentation
 │
-├── 📁 frontend/                         # Web User Interface
-│   ├── 📁 pages/                      # HTML Pages
+├──  frontend/                         # Web User Interface
+│   ├──  pages/                      # HTML Pages
 │   │   ├── index.html                # Homepage
 │   │   ├── diagnose.html             # AI Diagnosis page
 │   │   ├── diseases.html             # Disease library
@@ -204,18 +204,18 @@ digital-ophthalmology-assistant/
 │   │   ├── safety.html               # Safety information
 │   │   └── education.html            # Patient education
 │   │
-│   ├── 📁 styles/                     # CSS Styling
+│   ├──  styles/                     # CSS Styling
 │   │   └── styles.css                # Main stylesheet
 │   │
-│   ├── 📁 js/                         # JavaScript Logic
+│   ├──  js/                         # JavaScript Logic
 │   │   └── app.js                    # Main application script
 │   │
-│   ├── 📁 assets/                     # Static Assets
+│   ├──  assets/                     # Static Assets
 │   │   └── icons.js                  # Icon definitions
 │   │
 │   └── README.md                      # Frontend documentation
 │
-├── 📁 team_documentation/             # Team Resources (NEW)
+├──  team_documentation/             # Team Resources (NEW)
 │   ├── 01_PROJECT_OVERVIEW.md        # This file
 │   ├── 02_AI_TECHNICAL_GUIDE.md      # AI/ML details
 │   ├── 03_BACKEND_API_GUIDE.md       # API documentation
@@ -234,7 +234,7 @@ digital-ophthalmology-assistant/
 
 This project includes comprehensive documentation for all team members:
 
-### 📚 Available Documentation
+###  Available Documentation
 
 1. **[Project Overview](01_PROJECT_OVERVIEW.md)** ← You are here
    - Executive summary and system architecture
@@ -327,7 +327,7 @@ Proper locking mechanisms ensure concurrent requests don't corrupt data.
 
 ---
 
-**📌 Important**: This is a medical AI system. Always validate predictions clinically and never replace professional medical judgment with AI output.
+** Important**: This is a medical AI system. Always validate predictions clinically and never replace professional medical judgment with AI output.
 
 ---
 
@@ -378,28 +378,28 @@ Proper locking mechanisms ensure concurrent requests don't corrupt data.
 ```
 digital-ophthalmology-assistant/
 │
-├── 📁 backend/                          # Python FastAPI Backend
-│   ├── 📁 app/
+├──  backend/                          # Python FastAPI Backend
+│   ├──  app/
 │   │   ├── main.py                     # Application entry point
 │   │   ├── config.py                   # Configuration management
 │   │   ├── __init__.py                 # Package initialization
 │   │   │
-│   │   ├── 📁 services/                # Business Logic
-│   │   │   ├── ai_service.py          # 🤖 AI/ML Service (Deep Learning)
+│   │   ├──  services/                # Business Logic
+│   │   │   ├── ai_service.py          #  AI/ML Service (Deep Learning)
 │   │   │   └── seed_service.py        # Database seeding
 │   │   │
-│   │   ├── 📁 routes/                  # API Endpoints
+│   │   ├──  routes/                  # API Endpoints
 │   │   │   ├── predict.py             # Prediction endpoint
 │   │   │   ├── results.py             # History management
 │   │   │   ├── library.py             # Disease library
 │   │   │   ├── content.py             # Educational content
 │   │   │   └── questions.py           # Q&A functionality
 │   │   │
-│   │   ├── 📁 database/                # Database Layer
+│   │   ├──  database/                # Database Layer
 │   │   │   ├── db.py                  # Database connection
 │   │   │   └── __init__.py
 │   │   │
-│   │   └── 📁 models/                  # Database Models (SQLAlchemy)
+│   │   └──  models/                  # Database Models (SQLAlchemy)
 │   │       ├── prediction.py          # Prediction records
 │   │       ├── library_item.py        # Disease information
 │   │       ├── section.py             # Content sections
@@ -411,8 +411,8 @@ digital-ophthalmology-assistant/
 │   ├── Dockerfile                     # Container configuration
 │   └── README.md                      # Backend documentation
 │
-├── 📁 frontend/                         # Web User Interface
-│   ├── 📁 pages/                      # HTML Pages
+├──  frontend/                         # Web User Interface
+│   ├──  pages/                      # HTML Pages
 │   │   ├── index.html                # Homepage
 │   │   ├── diagnose.html             # AI Diagnosis page
 │   │   ├── diseases.html             # Disease library
@@ -421,18 +421,18 @@ digital-ophthalmology-assistant/
 │   │   ├── safety.html               # Safety information
 │   │   └── education.html            # Patient education
 │   │
-│   ├── 📁 styles/                     # CSS Styling
+│   ├──  styles/                     # CSS Styling
 │   │   └── styles.css                # Main stylesheet
 │   │
-│   ├── 📁 js/                         # JavaScript Logic
+│   ├──  js/                         # JavaScript Logic
 │   │   └── app.js                    # Main application script
 │   │
-│   ├── 📁 assets/                     # Static Assets
+│   ├──  assets/                     # Static Assets
 │   │   └── icons.js                  # Icon definitions
 │   │
 │   └── README.md                      # Frontend documentation
 │
-├── 📁 team_documentation/             # Team Resources (NEW)
+├──  team_documentation/             # Team Resources (NEW)
 │   ├── 01_PROJECT_OVERVIEW.md        # This file
 │   ├── 02_AI_TECHNICAL_GUIDE.md      # AI/ML details
 │   ├── 03_BACKEND_API_GUIDE.md       # API documentation
@@ -451,7 +451,7 @@ digital-ophthalmology-assistant/
 
 This project includes comprehensive documentation for all team members:
 
-### 📚 Available Documentation
+###  Available Documentation
 
 1. **[Project Overview](01_PROJECT_OVERVIEW.md)** ← You are here
    - Executive summary and system architecture
@@ -544,7 +544,7 @@ Proper locking mechanisms ensure concurrent requests don't corrupt data.
 
 ---
 
-**📌 Important**: This is a medical AI system. Always validate predictions clinically and never replace professional medical judgment with AI output.
+** Important**: This is a medical AI system. Always validate predictions clinically and never replace professional medical judgment with AI output.
 
 ---
 

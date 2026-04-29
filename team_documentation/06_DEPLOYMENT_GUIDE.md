@@ -1,12 +1,12 @@
 # Deployment & Setup Guide
 
-## 🚀 Overview
+##  Overview
 
 This document provides comprehensive instructions for setting up, running, and deploying the Digital Ophthalmology Assistant project in development and production environments.
 
 ---
 
-## 📋 Table of Contents
+##  Table of Contents
 
 1. [Prerequisites](#prerequisites)
 2. [Development Setup](#development-setup)
