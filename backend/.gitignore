@@ -70,14 +70,14 @@ Thumbs.db
 *.sqlite3
 
 # ML / heavy files (IMPORTANT - add models separately)
-models/
-*.h5
-*.keras
-*.pt
-*.pth
-*.onnx
-*.pb
-*.tflite
+# models/
+# *.h5
+# *.keras
+# *.pt
+# *.pth
+# *.onnx
+# *.pb
+# *.tflite
 
 # Logs
 *.log
