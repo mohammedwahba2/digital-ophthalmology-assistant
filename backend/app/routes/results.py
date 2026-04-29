@@ -31,8 +31,15 @@ def list_results(
     prediction: Optional[str] = Query(default=None),
     date_from: Optional[datetime] = Query(default=None),
     date_to: Optional[datetime] = Query(default=None),
+    page: int = Query(default=1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(default=20, ge=1, le=100, description="Number of results per page"),
     db: Session = Depends(get_db),
 ):
+    """List prediction results with pagination support.
+    
+    Returns paginated results to handle large datasets efficiently.
+    Maximum page_size is 100 to prevent excessive memory usage.
+    """
     query = db.query(Prediction)
 
     if min_confidence is not None:
@@ -44,17 +51,33 @@ def list_results(
     if date_to is not None:
         query = query.filter(Prediction.created_at <= date_to)
 
-    records = query.order_by(Prediction.created_at.desc()).all()
-    return [
-        {
-            "id": r.id,
-            "image_path": r.image_path,
-            "prediction": r.prediction,
-            "confidence": r.confidence,
-            "created_at": r.created_at,
+    # Get total count for pagination metadata
+    total_count = query.count()
+    
+    # Apply pagination
+    offset = (page - 1) * page_size
+    records = query.order_by(Prediction.created_at.desc()).offset(offset).limit(page_size).all()
+    
+    return {
+        "data": [
+            {
+                "id": r.id,
+                "image_path": r.image_path,
+                "prediction": r.prediction,
+                "confidence": r.confidence,
+                "created_at": r.created_at,
+            }
+            for r in records
+        ],
+        "pagination": {
+            "page": page,
+            "page_size": page_size,
+            "total_count": total_count,
+            "total_pages": (total_count + page_size - 1) // page_size,
+            "has_next": offset + page_size < total_count,
+            "has_previous": page > 1,
         }
-        for r in records
-    ]
+    }
 
 
 @router.delete("/results/{id}")

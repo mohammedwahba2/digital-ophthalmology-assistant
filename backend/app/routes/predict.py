@@ -1,9 +1,12 @@
 """Prediction endpoint for eye disease classification.
 
 Handles image upload, validation, and DL inference with proper
-error handling and database logging.
+error handling and database logging. Implements the preprocessing
+pipeline described in the project methodology, including the custom
+Center Crop algorithm for ocular focus.
 """
 
+import logging
 import uuid
 from io import BytesIO
 from pathlib import Path
@@ -17,17 +20,52 @@ from app.database.db import get_db
 from app.models.prediction import Prediction
 from app.services.ai_service import predict_image
 
+logger = logging.getLogger(__name__)
+
+# Image dimension constraints
+MIN_IMAGE_DIMENSION = 50  # Minimum width/height in pixels
+MAX_IMAGE_DIMENSION = 4096  # Maximum width/height in pixels
+
 router = APIRouter(tags=["predict"])
 
 
 def _validate_image(content: bytes) -> Image.Image:
-    """Validate and return image from bytes."""
+    """Validate and return image from bytes.
+    
+    Performs comprehensive validation including:
+    - File format verification
+    - Dimension constraints check
+    - Image integrity verification
+    
+    Returns:
+        Validated PIL Image instance.
+    
+    Raises:
+        HTTPException: If image is invalid, corrupted, or outside dimension limits.
+    """
     try:
         img = Image.open(BytesIO(content))
         img.verify()
         img = Image.open(BytesIO(content))
+        
+        # Validate image dimensions
+        width, height = img.size
+        if width < MIN_IMAGE_DIMENSION or height < MIN_IMAGE_DIMENSION:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Image dimensions too small ({width}x{height}). Minimum: {MIN_IMAGE_DIMENSION}x{MIN_IMAGE_DIMENSION}",
+            )
+        if width > MAX_IMAGE_DIMENSION or height > MAX_IMAGE_DIMENSION:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Image dimensions too large ({width}x{height}). Maximum: {MAX_IMAGE_DIMENSION}x{MAX_IMAGE_DIMENSION}",
+            )
+        
         return img
+    except HTTPException:
+        raise
     except (UnidentifiedImageError, OSError, SyntaxError) as e:
+        logger.error(f"Image validation failed: {e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or corrupted image file",
@@ -95,15 +133,24 @@ async def run_prediction(
     # -------------------------
     try:
         label, confidence = predict_image(file_path)
-    except FileNotFoundError:
+        logger.info(f"Prediction completed: {label} ({confidence:.4f})")
+    except FileNotFoundError as e:
+        logger.error(f"Model file not found: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Model not found on HuggingFace Hub",
+            detail="Model not found. Please ensure the model is properly deployed.",
         )
-    except Exception:
+    except ValueError as e:
+        logger.error(f"Invalid input for prediction: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Prediction error: {str(e)}",
+        )
+    except Exception as e:
+        logger.error(f"Unexpected prediction error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Prediction failed",
+            detail="Prediction failed due to an internal error",
         )
 
     # -------------------------

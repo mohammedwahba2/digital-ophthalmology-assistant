@@ -17,8 +17,8 @@ IMG_SIZE = 224
 
 CLASS_NAMES = (
     "healthy_eye",
-    "Conjunctivitis Recognition",
-    "Cataract dataset",
+    "conjunctivitis",
+    "cataract",
     "keratitis",
 )
 
@@ -81,9 +81,31 @@ def get_model(model_path: Path | str | None = None) -> tf.keras.Model:
 # Preprocessing
 # ======================
 
-def _center_crop(img: Image.Image) -> Image.Image:
+def _center_crop(img: Image.Image, crop_ratio: float = 0.6) -> Image.Image:
+    """Custom Center Crop Algorithm for Ocular Focus.
+    
+    As described in the project methodology, this algorithm isolates the cornea 
+    and lens region by cropping the central portion of the image, effectively 
+    eliminating non-pathological noise such as eyelashes, skin, and lighting 
+    artifacts from the periphery.
+    
+    Args:
+        img: PIL Image to crop.
+        crop_ratio: Ratio of the image to keep (default 0.6 = 60% center).
+    
+    Returns:
+        Cropped PIL Image focused on the central ocular region.
+    """
     w, h = img.size
-    return img.crop((w*0.2, h*0.2, w*0.8, h*0.8))
+    
+    # Calculate crop boundaries to center on the ocular region
+    # This removes peripheral noise (eyelashes, skin, equipment edges)
+    left = w * (1 - crop_ratio) / 2
+    top = h * (1 - crop_ratio) / 2
+    right = w * (1 + crop_ratio) / 2
+    bottom = h * (1 + crop_ratio) / 2
+    
+    return img.crop((left, top, right, bottom))
 
 
 def preprocess_image(image_path: str | Path) -> np.ndarray:

@@ -4,9 +4,11 @@ Main application entry point with middleware, routes, and startup/shutdown event
 """
 
 import logging
+import uuid
 from contextlib import asynccontextmanager
+from typing import Generator
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -25,6 +27,30 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+
+# ======================
+# Request ID Middleware
+# ======================
+
+@app.middleware("http")
+async def add_request_id(request: Request, call_next: Generator) -> Response:
+    """Add unique request ID to each request for tracking and debugging.
+    
+    This enables end-to-end request tracing across the system, which is
+    critical for debugging production issues and monitoring system health.
+    """
+    request_id = str(uuid.uuid4())
+    request.state.request_id = request_id
+    
+    logger.info(f"[{request_id}] {request.method} {request.url.path} - Started")
+    
+    response = await call_next(request)
+    
+    response.headers["X-Request-ID"] = request_id
+    logger.info(f"[{request_id}] {request.method} {request.url.path} - Completed with status {response.status_code}")
+    
+    return response
 
 # Load settings
 settings = get_settings()
@@ -81,12 +107,15 @@ app = FastAPI(
 )
 
 # CORS middleware
+# Note: In production, cors_origins should be set to specific domains
+# rather than ["*"] for enhanced security
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=settings.cors_allow_credentials,
     allow_methods=settings.cors_allow_methods,
     allow_headers=settings.cors_allow_headers,
+    expose_headers=["X-Request-ID"],  # Expose request ID for client-side debugging
 )
 
 
