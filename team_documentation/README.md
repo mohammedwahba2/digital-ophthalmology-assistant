@@ -204,7 +204,7 @@ digital-ophthalmology-assistant/
 
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
-| 1.0 | [Current Date] | Initial comprehensive documentation | [Your Name] |
+| 1.0 | April 29, 2026 | Initial comprehensive documentation | Mohamed Mahmoud Wahba |
 
 ---
 
@@ -218,7 +218,7 @@ This documentation was created to ensure every team member has a clear understan
 
 *For the full Digital Ophthalmology Assistant documentation, start with the [Project Overview](01_PROJECT_OVERVIEW.md).*
 
-**Last Updated**: [Current Date]  
+**Last Updated**: April 29, 2026  
 **Document Version**: 1.0  
 **Project**: Digital Ophthalmology Assistant - Graduation Project  
 **University**: Delta University for Science and Technology  
