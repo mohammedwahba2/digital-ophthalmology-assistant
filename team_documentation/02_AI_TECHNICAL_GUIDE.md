@@ -137,10 +137,10 @@ from huggingface_hub import hf_hub_download
 # Configuration constants
 IMG_SIZE = 224
 CLASS_NAMES = (
-    "healthy_eye",
-    "Conjunctivitis Recognition",
-    "Cataract dataset",
-    "keratitis",
+    "healthy_eye",      # Index 0: Normal
+    "conjunctivitis",   # Index 1: Conjunctivitis
+    "cataract",         # Index 2: Cataract
+    "keratitis",        # Index 3: Keratitis
 )
 MODEL_REPO = "mohamed-wahba77/eye-disease-model"
 MODEL_FILE = "model.keras"
@@ -347,10 +347,10 @@ preds = [0.9234, 0.0421, 0.0234, 0.0111]
 
 ```python
 CLASS_NAMES = (
-    "healthy_eye",                    # Index 0
-    "Conjunctivitis Recognition",     # Index 1
-    "Cataract dataset",               # Index 2
-    "keratitis",                      # Index 3
+    "healthy_eye",      # Index 0: Normal
+    "conjunctivitis",   # Index 1: Conjunctivitis
+    "cataract",         # Index 2: Cataract
+    "keratitis",        # Index 3: Keratitis
 )
 ```
 

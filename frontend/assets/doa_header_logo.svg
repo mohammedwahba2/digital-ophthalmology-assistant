@@ -1,0 +1,43 @@
+<svg width="680" height="100" viewBox="0 0 680 100" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>DOA Header Logo</title>
+  <desc>Compact header logo with eye icon and DOA text</desc>
+
+  <style>
+    .primary { fill: #0b8d7c; }
+    .stroke-primary { stroke: #0b8d7c; }
+    .sub { fill: #666666; }
+
+    @media (prefers-color-scheme: dark) {
+      .primary { fill: #0fbbA3; }
+      .stroke-primary { stroke: #0fbbA3; }
+      .sub { fill: #aaaaaa; }
+    }
+  </style>
+
+  <!-- Eye shape -->
+  <path d="M30 50 Q50 28 70 50 Q50 72 30 50 Z" fill="none" class="stroke-primary" stroke-width="2.2"/>
+  <!-- Iris -->
+  <circle cx="50" cy="50" r="13" fill="none" class="stroke-primary" stroke-width="1.8"/>
+  <!-- Pupil layers -->
+  <circle cx="50" cy="50" r="8" class="primary" opacity="0.2"/>
+  <circle cx="50" cy="50" r="4.5" class="primary"/>
+  <!-- Reflection -->
+  <circle cx="46" cy="46" r="2" fill="white" opacity="0.8"/>
+
+  <!-- Circuit dot left -->
+  <line x1="30" y1="50" x2="18" y2="50" class="stroke-primary" stroke-width="1.2" stroke-dasharray="3 2" fill="none"/>
+  <circle cx="15" cy="50" r="2.5" class="primary"/>
+
+  <!-- Circuit dot right -->
+  <line x1="70" y1="50" x2="82" y2="50" class="stroke-primary" stroke-width="1.2" stroke-dasharray="3 2" fill="none"/>
+  <circle cx="85" cy="50" r="2.5" class="primary"/>
+
+  <!-- Divider -->
+  <line x1="105" y1="28" x2="105" y2="72" class="stroke-primary" stroke-width="1" opacity="0.4" fill="none"/>
+
+  <!-- DOA text -->
+  <text x="122" y="62" font-family="sans-serif" font-size="32" font-weight="700" class="primary" letter-spacing="4">DOA</text>
+
+  <!-- Subtitle -->
+  <text x="124" y="78" font-family="sans-serif" font-size="10" font-weight="400" class="sub" letter-spacing="2.5">Digital Ophthalmology Assistant</text>
+</svg>

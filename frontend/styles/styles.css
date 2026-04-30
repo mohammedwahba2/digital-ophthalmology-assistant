@@ -131,6 +131,12 @@ small, .small { font-size: 0.88rem; color: var(--muted); }
   font-size: clamp(0.9rem, 1.6vw, 1rem);
 }
 
+.brand-logo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
 .nav-toggle,
 .theme-toggle,
 .search,

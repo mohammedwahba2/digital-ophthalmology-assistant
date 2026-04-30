@@ -11,6 +11,8 @@ import uuid
 from io import BytesIO
 from pathlib import Path
 
+from typing import Dict, Any
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from PIL import Image, UnidentifiedImageError
 from sqlalchemy.orm import Session
@@ -18,13 +20,13 @@ from sqlalchemy.orm import Session
 from app.config import get_settings, Settings
 from app.database.db import get_db
 from app.models.prediction import Prediction
-from app.services.ai_service import predict_image
+from app.services.ai_service import predict_image_detailed
 
 logger = logging.getLogger(__name__)
 
 # Image dimension constraints
 MIN_IMAGE_DIMENSION = 50  # Minimum width/height in pixels
-MAX_IMAGE_DIMENSION = 4096  # Maximum width/height in pixels
+MAX_IMAGE_DIMENSION = 10000  # Maximum width/height in pixels (increased for high-res eye images)
 
 router = APIRouter(tags=["predict"])
 
@@ -74,7 +76,7 @@ def _validate_image(content: bytes) -> Image.Image:
 
 @router.post(
     "/predict",
-    response_model=dict[str, str | float],
+    response_model=Dict[str, Any],
     summary="Predict eye disease from image",
 )
 async def run_prediction(
@@ -132,8 +134,10 @@ async def run_prediction(
     # 4. Prediction (DL MODEL)
     # -------------------------
     try:
-        label, confidence = predict_image(file_path)
-        logger.info(f"Prediction completed: {label} ({confidence:.4f})")
+        result = predict_image_detailed(file_path)
+        label = result["predicted_class"]
+        confidence = result["confidence"]
+        logger.info(f"Prediction completed: {label} ({confidence:.4f}) - Level: {result['confidence_level']}")
     except FileNotFoundError as e:
         logger.error(f"Model file not found: {e}")
         raise HTTPException(
@@ -171,5 +175,8 @@ async def run_prediction(
     # -------------------------
     return {
         "label": label,
-        "confidence": round(confidence, 4),
+        "confidence": confidence,
+        "confidence_level": result["confidence_level"],
+        "all_probabilities": result["all_probabilities"],
+        "needs_review": result["needs_review"],
     }

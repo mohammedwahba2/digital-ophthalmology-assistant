@@ -28,6 +28,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Load settings
+settings = get_settings()
+
+
+# Create FastAPI application
+app = FastAPI(
+    title=settings.app_name,
+    version=settings.app_version,
+    description="AI-powered ophthalmology assistant for anterior eye disease classification",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+    lifespan=None,  # Will be set after lifespan function is defined
+)
+
 
 # ======================
 # Request ID Middleware
@@ -51,10 +66,6 @@ async def add_request_id(request: Request, call_next: Generator) -> Response:
     logger.info(f"[{request_id}] {request.method} {request.url.path} - Completed with status {response.status_code}")
     
     return response
-
-# Load settings
-settings = get_settings()
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -95,16 +106,8 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down...")
 
 
-# Create FastAPI application
-app = FastAPI(
-    title=settings.app_name,
-    version=settings.app_version,
-    description="AI-powered ophthalmology assistant for anterior eye disease classification",
-    docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_url="/openapi.json",
-    lifespan=lifespan,
-)
+# Set the lifespan on the app
+app.lifespan = lifespan
 
 # CORS middleware
 # Note: In production, cors_origins should be set to specific domains

@@ -38,7 +38,8 @@ class Settings(BaseSettings):
     # 🔥 DL MODEL (HUGGING FACE HUB)
     # =========================
     model_repo_id: str = "mohamed-wahba77/eye-disease-model"
-    model_filename: str = "model.keras"
+    model_filename: str = "eye_disease_final_cropped.keras"
+    model_path: Path | None = None  # Override: set local model path in .env
 
     # File Upload
     upload_dir: Path | None = None
@@ -59,7 +60,9 @@ class Settings(BaseSettings):
 
     @property
     def resolved_model_path(self) -> Path:
-        """Get default local model path."""
+        """Get model path - uses local override if set, otherwise default."""
+        if self.model_path:
+            return Path(self.model_path)
         return Path(__file__).resolve().parents[2] / "models" / self.model_filename
 
 

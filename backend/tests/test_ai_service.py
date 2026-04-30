@@ -110,6 +110,21 @@ class TestClassNames:
         assert actual_classes == expected_classes, \
             f"Expected {expected_classes}, got {actual_classes}"
 
+    def test_class_order_matches_training(self):
+        """Test that class order matches the training pipeline.
+        
+        The model was trained with classes in this specific order:
+        Index 0: Normal (healthy_eye)
+        Index 1: Conjunctivitis
+        Index 2: Cataract
+        Index 3: Keratitis
+        
+        This order MUST match the training configuration for correct predictions.
+        """
+        expected_order = ("healthy_eye", "conjunctivitis", "cataract", "keratitis")
+        assert CLASS_NAMES == expected_order, \
+            f"Class order mismatch. Expected {expected_order}, got {CLASS_NAMES}"
+
 
 class TestImagePreprocessing:
     """Tests for image preprocessing pipeline."""

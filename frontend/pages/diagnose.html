@@ -13,7 +13,7 @@
   <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="topbar">
     <div class="container topbar-inner">
-      <a class="brand" href="index.html"><span class="icon" data-icon="eye"></span>Digital Ophthalmology Assistant</a>
+      <a class="brand" href="index.html"><img src="../assets/doa_header_logo.svg" alt="Digital Ophthalmology Assistant" class="brand-logo" /></a>
       <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle navigation"><span class="icon" data-icon="settings"></span>Menu</button>
       <nav id="site-nav" class="nav" aria-label="Primary">
         <a href="index.html">Home</a>
@@ -36,17 +36,18 @@
       </div>
 
       <div class="diagnose-layout reveal reveal-up">
+        <!-- Left Panel: Upload & Preview -->
         <section class="stack">
           <article class="card tilt-card stack">
             <h2><span class="icon" data-icon="upload"></span>Image Intake</h2>
-            <p class="small">Supported formats: PNG/JPG. Maximum size: 10MB.</p>
-            <input id="image-input" type="file" accept="image/png,image/jpeg" hidden />
+            <p class="small">Supported formats: PNG, JPG, JPEG, BMP, WEBP. Maximum size: 10MB.</p>
+            <input id="image-input" type="file" accept="image/png,image/jpeg,image/jpg,image/bmp,image/webp" hidden />
             <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Upload image by click or drag and drop" aria-describedby="upload-guidance">
               <span class="icon icon-lg" data-icon="upload"></span>
               <p><strong>Drag and drop image here</strong></p>
               <p>or press Enter to browse files</p>
             </div>
-            <p id="upload-guidance" class="small">For better classification quality, use slit-lamp style framing and focus.</p>
+            <p id="upload-guidance" class="small">For better classification quality, use slit-lamp style framing and focus on the eye.</p>
             <div id="upload-inline-msg" class="inline-msg" role="status" aria-live="polite"></div>
             <div class="actions">
               <button id="analyze-btn" class="btn btn-primary" type="button" disabled>Analyze Case</button>
@@ -62,6 +63,7 @@
           </article>
         </section>
 
+        <!-- Right Panel: Status & Results -->
         <section class="stack">
           <article class="card stack">
             <h2>Analysis Status</h2>
