@@ -112,7 +112,7 @@
   function initRevealSystem() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const nodes = document.querySelectorAll(".reveal, .stagger");
+    const nodes = document.querySelectorAll(".reveal, .stagger, .timeline, .footer");
     if (!nodes.length) return;
 
     const io = new IntersectionObserver((entries) => {
@@ -121,17 +121,90 @@
         const el = entry.target;
         el.classList.add("in-view");
 
+        // If this is a section with a stagger child, also trigger the stagger
+        if (el.classList.contains("reveal") && el.classList.contains("section")) {
+          const staggerChild = el.querySelector(".stagger");
+          if (staggerChild && !staggerChild.classList.contains("in-view")) {
+            setTimeout(() => {
+              staggerChild.classList.add("in-view");
+            }, 200);
+          }
+        }
+
         if (el.classList.contains("stagger")) {
           Array.from(el.children).forEach((child, index) => {
-            child.style.transitionDelay = `${index * 70}ms`;
+            child.style.transitionDelay = `${index * 80}ms`;
+            // Add spring-like animation with custom properties
+            child.style.transitionTimingFunction = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
           });
+        }
+
+        // Trigger timeline item animations
+        if (el.classList.contains("timeline")) {
+          const items = el.querySelectorAll("li");
+          items.forEach((item, index) => {
+            setTimeout(() => {
+              item.classList.add("animate-in");
+            }, index * 200);
+          });
+        }
+
+        // Trigger tilt card content entrance
+        if (el.classList.contains("tilt-card")) {
+          setTimeout(() => {
+            el.classList.add("in-view");
+          }, 100);
+        }
+
+        // Create particle effects for sections
+        if (el.classList.contains("section") || el.closest('.section')) {
+          createParticleEffects(el.closest('.section') || el);
         }
 
         io.unobserve(el);
       });
-    }, { threshold: 0.15 });
+    }, { threshold: 0.1 });
 
     nodes.forEach((n) => io.observe(n));
+  }
+
+  // Create floating particle effects
+  function createParticleEffects(container) {
+    if (container.querySelector('.particle-container')) return;
+    
+    const particleContainer = document.createElement('div');
+    particleContainer.className = 'particle-container';
+    
+    // Create 8-12 particles per section
+    const particleCount = 8 + Math.floor(Math.random() * 5);
+    
+    for (let i = 0; i < particleCount; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      
+      // Random positioning
+      particle.style.left = `${Math.random() * 100}%`;
+      particle.style.top = `${70 + Math.random() * 30}%`;
+      
+      // Random size variation
+      const size = 2 + Math.random() * 3;
+      particle.style.width = `${size}px`;
+      particle.style.height = `${size}px`;
+      
+      // Random animation duration and delay
+      const duration = 3 + Math.random() * 4;
+      const delay = Math.random() * 3;
+      particle.style.animationDuration = `${duration}s`;
+      particle.style.animationDelay = `${delay}s`;
+      
+      // Random color variation
+      const colors = ['var(--primary-400)', 'var(--accent-400)', 'var(--primary-300)'];
+      particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+      
+      particleContainer.appendChild(particle);
+    }
+    
+    container.appendChild(particleContainer);
   }
 
   function initHeroParallax() {
@@ -154,17 +227,56 @@
       if (card.dataset.tiltBound) return;
       card.dataset.tiltBound = "1";
 
+      // Add magnetic pull effect
+      let isHovering = false;
+      let currentRotateX = 0;
+      let currentRotateY = 0;
+      let targetRotateX = 0;
+      let targetRotateY = 0;
+
+      function animateTilt() {
+        if (!isHovering) {
+          // Smoothly return to center
+          currentRotateX += (0 - currentRotateX) * 0.1;
+          currentRotateY += (0 - currentRotateY) * 0.1;
+          
+          if (Math.abs(currentRotateX) < 0.1 && Math.abs(currentRotateY) < 0.1) {
+            card.style.transform = '';
+            return;
+          }
+        }
+        
+        card.style.transform = `perspective(1000px) rotateX(${currentRotateX}deg) rotateY(${currentRotateY}deg) translateY(-4px) scale3d(1.02, 1.02, 1.02)`;
+        requestAnimationFrame(animateTilt);
+      }
+
+      card.addEventListener("mouseenter", () => {
+        isHovering = true;
+        animateTilt();
+      });
+
       card.addEventListener("mousemove", (event) => {
         const rect = card.getBoundingClientRect();
         const px = (event.clientX - rect.left) / rect.width;
         const py = (event.clientY - rect.top) / rect.height;
-        const rx = (0.5 - py) * 4;
-        const ry = (px - 0.5) * 4;
-        card.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) translateY(-2px)`;
+        
+        // Calculate rotation with magnetic pull effect
+        targetRotateX = (0.5 - py) * 8;
+        targetRotateY = (px - 0.5) * 8;
+        
+        // Smooth interpolation
+        currentRotateX = targetRotateX;
+        currentRotateY = targetRotateY;
+        
+        // Set CSS custom properties for magnetic glow effect
+        card.style.setProperty('--mouse-x', `${px * 100}%`);
+        card.style.setProperty('--mouse-y', `${py * 100}%`);
       });
 
       card.addEventListener("mouseleave", () => {
-        card.style.transform = "";
+        isHovering = false;
+        card.style.removeProperty('--mouse-x');
+        card.style.removeProperty('--mouse-y');
       });
     });
   }
@@ -188,13 +300,62 @@
     const target = byId("home-diseases");
     if (!target) return;
 
-    target.innerHTML = allDiseases().map((d) => `
-      <article class="card tilt-card">
-        <h3>${escapeHtml(d.name)}</h3>
-        <p class="small">${escapeHtml(d.short)}</p>
-        <a class="btn btn-ghost" href="diseases.html#${encodeURIComponent(d.id)}">Learn more</a>
-      </article>
-    `).join("");
+    const allD = allDiseases();
+    
+    // If no diseases loaded, show placeholder cards
+    if (!allD || allD.length === 0) {
+      target.innerHTML = `
+        <article class="card tilt-card">
+          <img src="../assets/images/disease-cataract.png" alt="Cataract" loading="lazy" />
+          <h3>Cataract</h3>
+          <p class="small">Clouding of the eye's lens, leading to vision impairment.</p>
+          <a class="btn btn-ghost btn-sm" href="diseases.html#cataract">Learn more</a>
+        </article>
+        <article class="card tilt-card">
+          <img src="../assets/images/disease-conjunctivitis.png" alt="Conjunctivitis" loading="lazy" />
+          <h3>Conjunctivitis</h3>
+          <p class="small">Inflammation of the conjunctiva causing redness and irritation.</p>
+          <a class="btn btn-ghost btn-sm" href="diseases.html#conjunctivitis">Learn more</a>
+        </article>
+        <article class="card tilt-card">
+          <img src="../assets/images/disease-keratitis.png" alt="Keratitis" loading="lazy" />
+          <h3>Keratitis</h3>
+          <p class="small">Inflammation of the cornea that can affect vision.</p>
+          <a class="btn btn-ghost btn-sm" href="diseases.html#keratitis">Learn more</a>
+        </article>
+        <article class="card tilt-card">
+          <img src="../assets/images/disease-normal.png" alt="Normal" loading="lazy" />
+          <h3>Normal</h3>
+          <p class="small">Healthy eye examination with no detected abnormalities.</p>
+          <a class="btn btn-ghost btn-sm" href="diseases.html#normal">Learn more</a>
+        </article>
+      `;
+    } else {
+      // Map disease names to image files
+      const diseaseImages = {
+        'cataract': 'disease-cataract.png',
+        'conjunctivitis': 'disease-conjunctivitis.png',
+        'keratitis': 'disease-keratitis.png',
+        'normal': 'disease-normal.png',
+        'pterygium': 'disease-normal.png'
+      };
+
+      target.innerHTML = allD.map((d) => {
+        const imageName = diseaseImages[d.id.toLowerCase()] || 'disease-normal.png';
+        return `
+          <article class="card tilt-card">
+            <div style="display: flex; gap: var(--space-3); align-items: flex-start;">
+              <img src="../assets/images/${imageName}" alt="${escapeHtml(d.name)}" style="width: 48px; height: 48px; object-fit: contain; flex-shrink: 0;" loading="lazy" />
+              <div style="flex: 1; min-width: 0;">
+                <h3 style="margin-bottom: var(--space-2);">${escapeHtml(d.name)}</h3>
+                <p class="small">${escapeHtml(d.short)}</p>
+                <a class="btn btn-ghost btn-sm" href="diseases.html#${encodeURIComponent(d.id)}" style="margin-top: var(--space-2);">Learn more</a>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
 
     initRipple();
     initTiltCards();
@@ -225,19 +386,36 @@
         return;
       }
 
-      sections.innerHTML = filtered.map((d, i) => `
-        <article id="${d.id}" class="card reveal ${i % 2 ? "reveal-right" : "reveal-left"}">
-          <div class="stack">
-            <h2>${escapeHtml(d.name)} - <span class="rtl" lang="ar" dir="rtl">${escapeHtml(d.name_ar)}</span></h2>
-            <div class="rtl-box rtl" lang="ar" dir="rtl"><p>${escapeHtml(d.short_ar)}</p></div>
-            <div class="rtl-box rtl" lang="ar" dir="rtl"><h3>الأعراض</h3><ul>${d.symptoms_ar.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>
-            <div class="rtl-box warning rtl" lang="ar" dir="rtl"><h3>علامات إنذار</h3><ul>${d.red_flags_ar.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>
-            <div class="rtl-box rtl" lang="ar" dir="rtl"><h3>نصائح آمنة</h3><ul>${d.safe_tips_ar.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>
-            <p class="small rtl" lang="ar" dir="rtl"><strong>متى تراجع الطبيب:</strong> ${escapeHtml(d.when_to_see_doctor_ar)}</p>
-            <a class="btn btn-outline" href="diagnose.html">Back to Diagnose</a>
-          </div>
-        </article>
-      `).join("");
+      // Map disease names to image files
+      const diseaseImages = {
+        'cataract': 'disease-cataract.png',
+        'conjunctivitis': 'disease-conjunctivitis.png',
+        'keratitis': 'disease-keratitis.png',
+        'normal': 'disease-normal.png',
+        'pterygium': 'disease-normal.png'
+      };
+
+      sections.innerHTML = filtered.map((d, i) => {
+        const imageName = diseaseImages[d.id.toLowerCase()] || 'disease-normal.png';
+        return `
+          <article id="${d.id}" class="card reveal ${i % 2 ? "reveal-right" : "reveal-left"}">
+            <div class="stack">
+              <div style="display: flex; gap: var(--space-4); align-items: flex-start; flex-wrap: wrap;">
+                <img src="../assets/images/${imageName}" alt="${escapeHtml(d.name)}" style="width: 64px; height: 64px; object-fit: contain; flex-shrink: 0;" loading="lazy" />
+                <div style="flex: 1; min-width: 0;">
+                  <h2>${escapeHtml(d.name)} - <span class="rtl" lang="ar" dir="rtl">${escapeHtml(d.name_ar)}</span></h2>
+                </div>
+              </div>
+              <div class="rtl-box rtl" lang="ar" dir="rtl"><p>${escapeHtml(d.short_ar)}</p></div>
+              <div class="rtl-box rtl" lang="ar" dir="rtl"><h3>الأعراض</h3><ul>${d.symptoms_ar.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>
+              <div class="rtl-box warning rtl" lang="ar" dir="rtl"><h3>علامات إنذار</h3><ul>${d.red_flags_ar.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>
+              <div class="rtl-box rtl" lang="ar" dir="rtl"><h3>نصائح آمنة</h3><ul>${d.safe_tips_ar.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>
+              <p class="small rtl" lang="ar" dir="rtl"><strong>متى تراجع الطبيب:</strong> ${escapeHtml(d.when_to_see_doctor_ar)}</p>
+              <a class="btn btn-outline" href="diagnose.html">Back to Diagnose</a>
+            </div>
+          </article>
+        `;
+      }).join("");
 
       initRevealSystem();
       initRipple();
@@ -425,6 +603,14 @@
     const riskLevel = disease ? disease.risk_level : "Unknown";
     const riskClass = String(riskLevel || "low").toLowerCase();
 
+    // Map risk class to badge class
+    const getRiskBadgeClass = (level) => {
+      const l = String(level).toLowerCase();
+      if (l === 'high' || l === 'urgent') return 'high';
+      if (l === 'moderate' || l === 'medium') return 'moderate';
+      return 'low';
+    };
+
     // Get disease info dynamically from backend - fallback to empty if not available
     const diseaseName = disease ? disease.name : "";
     const diseaseNameAr = disease ? disease.name_ar : "";
@@ -440,25 +626,23 @@
     // Result header with badges
     html += '<div class="result-header ltr">';
     if (diseaseName) {
-      html += `<span class="badge badge-primary"><span class="icon">${getIconByName("activity")}</span>Diagnosis: ${escapeHtml(diseaseName)}</span>`;
+      html += `<span class="badge badge-primary"><span class="icon">${getIconByName("activity")}</span>${escapeHtml(diseaseName)}</span>`;
     }
     html += `<span class="badge badge-success">Confidence: ${confidencePercent.toFixed(1)}%</span>`;
     if (riskLevel !== "Unknown") {
-      html += `<span class="badge ${riskClass}">Risk: ${escapeHtml(riskLevel)}</span>`;
+      html += `<span class="badge ${getRiskBadgeClass(riskClass)}">Risk: ${escapeHtml(riskLevel)}</span>`;
     }
     html += '</div>';
 
     // Disease name in both languages
     if (diseaseName || diseaseNameAr) {
-      html += '<div class="result-disease-info stack">';
-      html += '<div class="disease-name-box">';
+      html += '<div class="stack" style="margin-bottom: var(--space-4);">';
       if (diseaseName) {
-        html += `<h3 class="ltr">${escapeHtml(diseaseName)}</h3>`;
+        html += `<h3 class="ltr" style="margin-bottom: var(--space-2);">${escapeHtml(diseaseName)}</h3>`;
       }
       if (diseaseNameAr) {
-        html += `<h3 class="rtl" lang="ar" dir="rtl">${escapeHtml(diseaseNameAr)}</h3>`;
+        html += `<h3 class="rtl" lang="ar" dir="rtl" style="margin-bottom: var(--space-2);">${escapeHtml(diseaseNameAr)}</h3>`;
       }
-      html += '</div>';
       if (diseaseShort) {
         html += `<p class="small">${escapeHtml(diseaseShort)}</p>`;
       }
@@ -469,24 +653,24 @@
     html += '<div class="result-grid ltr">';
     html += '<article class="card">';
     html += '<h3><span class="icon" data-icon="activity"></span>Analysis Results</h3>';
-    html += '<ul>';
+    html += '<ul class="plain-list">';
     if (diseaseName) {
-      html += `<li><strong>Predicted Condition:</strong> ${escapeHtml(diseaseName)}</li>`;
+      html += `<li><span class="icon" data-icon="check"></span><strong>Predicted Condition:</strong> ${escapeHtml(diseaseName)}</li>`;
     }
     if (diseaseNameAr) {
-      html += `<li><strong>Arabic Name:</strong> ${escapeHtml(diseaseNameAr)}</li>`;
+      html += `<li><span class="icon" data-icon="check"></span><strong>Arabic Name:</strong> ${escapeHtml(diseaseNameAr)}</li>`;
     }
-    html += `<li><strong>Confidence Level:</strong> ${confidencePercent.toFixed(1)}%</li>`;
+    html += `<li><span class="icon" data-icon="check"></span><strong>Confidence Level:</strong> ${confidencePercent.toFixed(1)}%</li>`;
     html += '</ul>';
     html += '</article>';
 
     // Clinical guidance - only show if we have content from backend
     if (disease && disease.safe_tips && disease.safe_tips.length > 0) {
       html += '<article class="card">';
-      html += '<h3><span class="icon" data-icon="warning"></span>Clinical Guidance</h3>';
-      html += '<ul>';
+      html += '<h3><span class="icon" data-icon="shield"></span>Clinical Guidance</h3>';
+      html += '<ul class="plain-list">';
       disease.safe_tips.forEach(tip => {
-        html += `<li>${escapeHtml(tip)}</li>`;
+        html += `<li><span class="icon" data-icon="check"></span>${escapeHtml(tip)}</li>`;
       });
       html += '</ul>';
       html += '</article>';
@@ -495,11 +679,11 @@
 
     // Symptoms - only if available from backend
     if (diseaseSymptoms.length > 0) {
-      html += '<article class="card stack ltr">';
+      html += '<article class="card stack ltr" style="margin-top: var(--space-4);">';
       html += '<h3><span class="icon" data-icon="activity"></span>Common Symptoms</h3>';
-      html += '<ul>';
+      html += '<ul class="plain-list">';
       diseaseSymptoms.forEach(s => {
-        html += `<li>${escapeHtml(s)}</li>`;
+        html += `<li><span class="icon" data-icon="circle"></span>${escapeHtml(s)}</li>`;
       });
       html += '</ul>';
       html += '</article>';
@@ -507,11 +691,11 @@
 
     // Red flags - only if available from backend
     if (diseaseRedFlags.length > 0) {
-      html += '<article class="card stack warning ltr">';
+      html += '<article class="card stack ltr" style="margin-top: var(--space-4); border-color: var(--danger-300); background: var(--danger-50);">';
       html += '<h3><span class="icon" data-icon="warning"></span>Warning Signs - Seek Immediate Care</h3>';
-      html += '<ul>';
+      html += '<ul class="plain-list">';
       diseaseRedFlags.forEach(f => {
-        html += `<li>${escapeHtml(f)}</li>`;
+        html += `<li><span class="icon" data-icon="alert"></span>${escapeHtml(f)}</li>`;
       });
       html += '</ul>';
       html += '</article>';
@@ -519,7 +703,7 @@
 
     // When to see doctor - only if available from backend
     if (whenToSeeDoctor) {
-      html += '<article class="card stack rtl-box rtl" lang="ar" dir="rtl">';
+      html += `<article class="card stack rtl-box rtl" lang="ar" dir="rtl" style="margin-top: var(--space-4);">`;
       html += '<h3>متى يجب مراجعة الطبيب</h3>';
       html += `<p>${escapeHtml(whenToSeeDoctor)}</p>`;
       html += '</article>';

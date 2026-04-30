@@ -14,78 +14,99 @@
   <header class="topbar">
     <div class="container topbar-inner">
       <a class="brand" href="index.html"><img src="../assets/doa_header_logo.svg" alt="Digital Ophthalmology Assistant" class="brand-logo" /></a>
-      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle navigation"><span class="icon" data-icon="settings"></span>Menu</button>
+      <!-- <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle navigation"><span class="icon" data-icon="settings"></span>Menu</button> -->
       <nav id="site-nav" class="nav" aria-label="Primary">
         <a href="index.html">Home</a>
-        <a href="diagnose.html" aria-current="page">Diagnosis</a>
-        <a href="history.html">History</a>
         <a href="diseases.html">Disease Library</a>
         <a href="education.html">Education</a>
         <a href="safety.html">Safety</a>
         <a href="about.html">About</a>
       </nav>
-      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme"><span class="icon theme-icon" data-icon="sun"></span></button>
+      <div>
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme"><span class="icon theme-icon" data-icon="sun"></span></button>
+        <a class="btn btn-primary btn-sm header-btn"   href="diagnose.html">
+          Start Diagnosis
+        </a>
+      </div>
     </div>
   </header>
 
-  <main id="main-content" class="section">
-    <div class="container stack">
-      <div class="section-head reveal reveal-up">
-        <h1>Diagnosis Workspace</h1>
-        <p>Upload an eye image and run live backend inference immediately.</p>
+  <main id="main-content">
+    <div style="padding: 2rem 2rem 1rem; max-width: 1100px; margin: 0 auto;">
+      <div class="section-label">Diagnosis Workspace</div>
+      <h2 style="font-size: 1.75rem; margin-bottom: 0.5rem;">AI Eye Image Analysis</h2>
+      <p style="color: var(--text-tertiary); font-size: 13px;">Upload an eye image for AI-powered analysis. Results are for clinical decision support only.</p>
+    </div>
+
+    <div class="diagnose-layout reveal reveal-up" style="max-width: 1100px; margin: 0 auto; padding: 2rem;">
+      <!-- Left Panel: Upload & Preview -->
+      <div class="upload-panel card" style="background: var(--bg-primary); border-radius: 16px; padding: 2rem;">
+        <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 1.25rem;">Image Upload</h3>
+        <input id="image-input" type="file" accept="image/png,image/jpeg,image/jpg" hidden />
+        <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Upload image by click or drag and drop" style="border: 2px dashed var(--sky); border-radius: 12px; padding: 3rem 2rem; text-align: center; background: var(--primary-50); cursor: pointer; transition: all 0.2s; margin-bottom: 1.5rem;">
+          <div style="font-size: 40px; margin-bottom: 1rem;">📤</div>
+          <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">Drop image here or click to browse</h3>
+          <p style="font-size: 12px; color: var(--text-tertiary);">Supports PNG, JPG · Max 10MB</p>
+        </div>
+        <div id="preview-box" class="preview-box" role="button" tabindex="0" aria-label="Click to zoom" style="width: 100%; height: 180px; background: linear-gradient(135deg, var(--primary-100), var(--success-50)); border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); font-size: 13px; color: var(--text-tertiary); margin-bottom: 1rem;">
+          <span>Image preview will appear here</span>
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
+            <span style="color: var(--text-tertiary)">Image Quality</span>
+            <span id="quality-text" style="color: var(--text-tertiary)">—</span>
+          </div>
+          <div style="height: 4px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden;">
+            <div id="quality-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, var(--success), #16a34a); border-radius: 4px; transition: width 0.8s ease;"></div>
+          </div>
+        </div>
+        <div id="upload-inline-msg" class="inline-msg" role="status" aria-live="polite" style="margin-top: var(--space-3);"></div>
+        <div class="actions" style="margin-top: 1rem;">
+          <button id="analyze-btn" class="btn btn-primary" type="button" disabled style="width: 100%; padding: 13px; background: linear-gradient(135deg, var(--sky), var(--sky-dark)); border: none; border-radius: 10px; font-size: 14px; font-weight: 600;">
+            <span class="icon" data-icon="play"></span>
+            Analyze Image →
+          </button>
+          <button id="reset-btn" class="btn btn-ghost" type="button" disabled style="width: 100%; margin-top: 0.5rem;">
+            <span class="icon" data-icon="refresh"></span>
+            Reset
+          </button>
+        </div>
+        <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 0.75rem; text-align: center;">Images are processed securely and not stored</p>
       </div>
 
-      <div class="diagnose-layout reveal reveal-up">
-        <!-- Left Panel: Upload & Preview -->
-        <section class="stack">
-          <article class="card tilt-card stack">
-            <h2><span class="icon" data-icon="upload"></span>Image Intake</h2>
-            <p class="small">Supported formats: PNG, JPG, JPEG, BMP, WEBP. Maximum size: 10MB.</p>
-            <input id="image-input" type="file" accept="image/png,image/jpeg,image/jpg,image/bmp,image/webp" hidden />
-            <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Upload image by click or drag and drop" aria-describedby="upload-guidance">
-              <span class="icon icon-lg" data-icon="upload"></span>
-              <p><strong>Drag and drop image here</strong></p>
-              <p>or press Enter to browse files</p>
-            </div>
-            <p id="upload-guidance" class="small">For better classification quality, use slit-lamp style framing and focus on the eye.</p>
-            <div id="upload-inline-msg" class="inline-msg" role="status" aria-live="polite"></div>
-            <div class="actions">
-              <button id="analyze-btn" class="btn btn-primary" type="button" disabled>Analyze Case</button>
-              <button id="reset-btn" class="btn btn-ghost" type="button" disabled>Reset</button>
-            </div>
-          </article>
-
-          <article class="card tilt-card stack">
-            <h2>Image Preview</h2>
-            <div id="preview-box" class="preview-box" role="button" tabindex="0" aria-label="Open image zoom modal">
-              <p>No image selected.</p>
-            </div>
-          </article>
-        </section>
-
-        <!-- Right Panel: Status & Results -->
-        <section class="stack">
-          <article class="card stack">
-            <h2>Analysis Status</h2>
-            <div id="status-indicator" class="status idle" role="status" aria-live="polite"><span class="dot"></span>Idle</div>
-            <div id="loading-line" class="loading-line hidden" aria-hidden="true"><span></span></div>
-          </article>
-
-          <article class="card stack" id="result-panel">
-            <h2><span class="icon" data-icon="activity"></span>Clinical Result Summary</h2>
-            <div id="result-skeleton" class="hidden" aria-hidden="true">
-              <div class="skeleton sk-line"></div>
-              <div class="skeleton sk-line"></div>
-              <div class="skeleton sk-pill"></div>
-              <div class="skeleton sk-line"></div>
-              <div class="skeleton sk-line"></div>
-            </div>
-            <div id="result-content"><p class="small">No analysis yet. Upload a case and run analysis.</p></div>
-          </article>
-        </section>
+      <!-- Right Panel: Status & Results -->
+      <div class="results-panel card" style="background: var(--bg-primary); border-radius: 16px; padding: 2rem;">
+        <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 1.25rem;">Analysis Results</h3>
+        <div id="status-indicator" class="status idle" role="status" aria-live="polite" style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-tertiary); padding: 1rem; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 1.5rem;">
+          <span class="dot" style="width: 8px; height: 8px; border-radius: 50%; background: var(--gray-400);"></span>
+          <span>Waiting for image upload and analysis</span>
+        </div>
+        <div id="status-loading" style="display: none; padding: 1rem; background: var(--warning-50); border-radius: 8px; margin-bottom: 1.5rem;">
+          <div style="font-size: 13px; color: var(--warning-700); display: flex; align-items: center; gap: 8px;">
+            <div style="width: 12px; height: 12px; border: 2px solid var(--warning-500); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+            Analyzing image — please wait...
+          </div>
+        </div>
+        <div id="result-skeleton" class="hidden" aria-hidden="true">
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-pill"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+        </div>
+        <div id="result-content" style="display: block;">
+          <p class="muted text-center" style="padding: var(--space-8) 0; color: var(--text-tertiary);">
+            Upload an image and click Analyze to see results
+          </p>
+        </div>
+        <div id="loading-line" class="loading-line hidden" aria-hidden="true"><span></span></div>
       </div>
     </div>
   </main>
+
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 
   <div id="lightbox" class="lightbox hidden" role="dialog" aria-modal="true" aria-label="Image zoom preview">
     <button id="lightbox-close" class="btn btn-ghost" type="button">Close</button>

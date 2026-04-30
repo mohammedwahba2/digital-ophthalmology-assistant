@@ -14,32 +14,35 @@
   <header class="topbar">
     <div class="container topbar-inner">
       <a class="brand" href="index.html"><img src="../assets/doa_header_logo.svg" alt="Digital Ophthalmology Assistant" class="brand-logo" /></a>
-      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle navigation"><span class="icon" data-icon="settings"></span>Menu</button>
+      <!-- <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle navigation"><span class="icon" data-icon="settings"></span>Menu</button> -->
       <nav id="site-nav" class="nav" aria-label="Primary">
         <a href="index.html">Home</a>
-        <a href="diagnose.html">Diagnosis</a>
         <a href="diseases.html" aria-current="page">Disease Library</a>
         <a href="education.html">Education</a>
         <a href="safety.html">Safety</a>
         <a href="about.html">About</a>
       </nav>
-      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme"><span class="icon theme-icon" data-icon="sun"></span></button>
+      <div>
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme"><span class="icon theme-icon" data-icon="sun"></span></button>
+        <a class="btn btn-primary btn-sm header-btn"   href="diagnose.html">
+          Start Diagnosis
+        </a>
+      </div>
     </div>
   </header>
-
   <main id="main-content" class="section">
-    <div class="container stack">
+    <div class="container">
       <div class="section-head reveal reveal-up">
-        <h1>Disease Knowledge Base</h1>
-        <p>Structured educational reference for supported anterior eye conditions.</p>
+        <h1><span class="icon" data-icon="book-open"></span> Disease Knowledge Base</h1>
+        <p>Comprehensive reference library for ophthalmic conditions with clinical guidance and patient education materials.</p>
       </div>
 
       <div class="library-layout reveal reveal-up">
-        <aside class="card sticky-card stack reveal reveal-left" aria-label="Quick navigation">
-          <h2>Quick Navigation</h2>
-          <input id="disease-search" class="search" type="search" placeholder="Search condition..." aria-label="Search diseases" />
-          <div id="library-tabs" class="tabs" role="tablist" aria-label="Disease filters">
-            <button class="tab-btn active" type="button" role="tab" aria-selected="true" data-disease="">All</button>
+        <aside class="card sticky-card stack reveal reveal-left" aria-label="Filters and navigation">
+          <h2><span class="icon" data-icon="filter"></span> Filter Conditions</h2>
+          <input id="disease-search" class="search" type="search" placeholder="Search diseases..." aria-label="Search diseases" />
+          <div id="library-tabs" class="tabs" role="tablist" aria-label="Disease categories" style="margin-top: var(--space-4);">
+            <button class="tab-btn active" type="button" role="tab" aria-selected="true" data-disease="">All Conditions</button>
             <button class="tab-btn" type="button" role="tab" aria-selected="false" data-disease="Cataract">Cataract</button>
             <button class="tab-btn" type="button" role="tab" aria-selected="false" data-disease="Conjunctivitis">Conjunctivitis</button>
             <button class="tab-btn" type="button" role="tab" aria-selected="false" data-disease="Keratitis">Keratitis</button>

@@ -14,19 +14,22 @@
   <header class="topbar">
     <div class="container topbar-inner">
       <a class="brand" href="index.html"><img src="../assets/doa_header_logo.svg" alt="Digital Ophthalmology Assistant" class="brand-logo" /></a>
-      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle navigation"><span class="icon" data-icon="settings"></span>Menu</button>
+      <!-- <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle navigation"><span class="icon" data-icon="settings"></span>Menu</button> -->
       <nav id="site-nav" class="nav" aria-label="Primary">
         <a href="index.html">Home</a>
-        <a href="diagnose.html">Diagnosis</a>
         <a href="diseases.html">Disease Library</a>
         <a href="education.html" aria-current="page">Education</a>
         <a href="safety.html">Safety</a>
         <a href="about.html">About</a>
       </nav>
-      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme"><span class="icon theme-icon" data-icon="sun"></span></button>
+      <div>
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme"><span class="icon theme-icon" data-icon="sun"></span></button>
+        <a class="btn btn-primary btn-sm header-btn"   href="diagnose.html">
+          Start Diagnosis
+        </a>
+      </div>
     </div>
   </header>
-
   <main id="main-content" class="section">
     <div class="container stack">
       <div id="education-content" class="stack"></div>
