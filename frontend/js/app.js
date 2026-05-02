@@ -4,6 +4,14 @@
   const STORAGE_THEME = "doa-theme";
   const API_ROOT = (window.DOA_API_BASE || localStorage.getItem("doa-api-base") || "http://127.0.0.1:8000").replace(/\/+$/, "");
   const CONTENT_API_BASE = `${API_ROOT}/api/v1`;
+  const DISEASE_IMAGE_BY_ID = {
+    cataract: "disease-cataract.png",
+    conjunctivitis: "disease-conjunctivitis.png",
+    keratitis: "disease-keratitis.png",
+    normal: "disease-normal.png",
+    pterygium: "disease-normal.png",
+    healthy_eye: "disease-normal.png"
+  };
   let diseases = null;
 
   initIcons();
@@ -296,65 +304,70 @@
     return Object.values(diseases || {});
   }
 
+  function getDiseaseImageName(id) {
+    return DISEASE_IMAGE_BY_ID[String(id || "").toLowerCase()] || "disease-normal.png";
+  }
+
+  function renderSurfaceMessage(text) {
+    return `<article class="surface-message"><p class="small">${escapeHtml(text)}</p></article>`;
+  }
+
+  function renderDiseaseTile(disease, options = {}) {
+    const imageName = getDiseaseImageName(disease.id);
+    const titleTag = options.titleTag || "h3";
+    const bodyClass = options.bodyClass || "disease-tile-body";
+    const title = `<${titleTag}>${escapeHtml(disease.name || "Unknown")}</${titleTag}>`;
+    return `
+      <article class="card tilt-card">
+        <div class="disease-tile">
+          <img src="../assets/images/${imageName}" alt="${escapeHtml(disease.name || "Disease image")}" class="disease-tile-media" loading="lazy" />
+          <div class="${bodyClass}">
+            ${title}
+            <p class="small">${escapeHtml(disease.short || "")}</p>
+            <a class="btn btn-ghost btn-sm" href="diseases.html#${encodeURIComponent(disease.id || "")}">Learn more</a>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderDiseaseDetail(disease, index) {
+    const imageName = getDiseaseImageName(disease.id);
+    return `
+      <article id="${disease.id}" class="card reveal ${index % 2 ? "reveal-right" : "reveal-left"}">
+        <div class="stack">
+          <div class="disease-detail-head">
+            <img src="../assets/images/${imageName}" alt="${escapeHtml(disease.name)}" class="disease-detail-media" loading="lazy" />
+            <div class="disease-detail-title">
+              <h2>${escapeHtml(disease.name)} - <span class="rtl" lang="ar" dir="rtl">${escapeHtml(disease.name_ar)}</span></h2>
+            </div>
+          </div>
+          <div class="rtl-box rtl" lang="ar" dir="rtl"><p>${escapeHtml(disease.short_ar)}</p></div>
+          <div class="rtl-box rtl stack-panel" lang="ar" dir="rtl"><h3>الأعراض</h3><ul>${(disease.symptoms_ar || []).map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>
+          <div class="rtl-box warning rtl stack-panel" lang="ar" dir="rtl"><h3>علامات إنذار</h3><ul>${(disease.red_flags_ar || []).map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>
+          <div class="rtl-box rtl stack-panel" lang="ar" dir="rtl"><h3>نصائح آمنة</h3><ul>${(disease.safe_tips_ar || []).map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>
+          <p class="small rtl" lang="ar" dir="rtl"><strong>متى تراجع الطبيب:</strong> ${escapeHtml(disease.when_to_see_doctor_ar || "")}</p>
+          <a class="btn btn-outline" href="diagnose.html">Back to Diagnose</a>
+        </div>
+      </article>
+    `;
+  }
+
   function renderHomeDiseases() {
     const target = byId("home-diseases");
     if (!target) return;
 
     const allD = allDiseases();
     
-    // If no diseases loaded, show placeholder cards
     if (!allD || allD.length === 0) {
       target.innerHTML = `
-        <article class="card tilt-card">
-          <img src="../assets/images/disease-cataract.png" alt="Cataract" loading="lazy" />
-          <h3>Cataract</h3>
-          <p class="small">Clouding of the eye's lens, leading to vision impairment.</p>
-          <a class="btn btn-ghost btn-sm" href="diseases.html#cataract">Learn more</a>
-        </article>
-        <article class="card tilt-card">
-          <img src="../assets/images/disease-conjunctivitis.png" alt="Conjunctivitis" loading="lazy" />
-          <h3>Conjunctivitis</h3>
-          <p class="small">Inflammation of the conjunctiva causing redness and irritation.</p>
-          <a class="btn btn-ghost btn-sm" href="diseases.html#conjunctivitis">Learn more</a>
-        </article>
-        <article class="card tilt-card">
-          <img src="../assets/images/disease-keratitis.png" alt="Keratitis" loading="lazy" />
-          <h3>Keratitis</h3>
-          <p class="small">Inflammation of the cornea that can affect vision.</p>
-          <a class="btn btn-ghost btn-sm" href="diseases.html#keratitis">Learn more</a>
-        </article>
-        <article class="card tilt-card">
-          <img src="../assets/images/disease-normal.png" alt="Normal" loading="lazy" />
-          <h3>Normal</h3>
-          <p class="small">Healthy eye examination with no detected abnormalities.</p>
-          <a class="btn btn-ghost btn-sm" href="diseases.html#normal">Learn more</a>
-        </article>
+        ${renderDiseaseTile({ id: "cataract", name: "Cataract", short: "Clouding of the eye's lens, leading to vision impairment." })}
+        ${renderDiseaseTile({ id: "conjunctivitis", name: "Conjunctivitis", short: "Inflammation of the conjunctiva causing redness and irritation." })}
+        ${renderDiseaseTile({ id: "keratitis", name: "Keratitis", short: "Inflammation of the cornea that can affect vision." })}
+        ${renderDiseaseTile({ id: "normal", name: "Normal", short: "Healthy eye examination with no detected abnormalities." })}
       `;
     } else {
-      // Map disease names to image files
-      const diseaseImages = {
-        'cataract': 'disease-cataract.png',
-        'conjunctivitis': 'disease-conjunctivitis.png',
-        'keratitis': 'disease-keratitis.png',
-        'normal': 'disease-normal.png',
-        'pterygium': 'disease-normal.png'
-      };
-
-      target.innerHTML = allD.map((d) => {
-        const imageName = diseaseImages[d.id.toLowerCase()] || 'disease-normal.png';
-        return `
-          <article class="card tilt-card">
-            <div style="display: flex; gap: var(--space-3); align-items: flex-start;">
-              <img src="../assets/images/${imageName}" alt="${escapeHtml(d.name)}" style="width: 48px; height: 48px; object-fit: contain; flex-shrink: 0;" loading="lazy" />
-              <div style="flex: 1; min-width: 0;">
-                <h3 style="margin-bottom: var(--space-2);">${escapeHtml(d.name)}</h3>
-                <p class="small">${escapeHtml(d.short)}</p>
-                <a class="btn btn-ghost btn-sm" href="diseases.html#${encodeURIComponent(d.id)}" style="margin-top: var(--space-2);">Learn more</a>
-              </div>
-            </div>
-          </article>
-        `;
-      }).join("");
+      target.innerHTML = allD.map((d) => renderDiseaseTile(d)).join("");
     }
 
     initRipple();
@@ -377,45 +390,15 @@
       try {
         filtered = await listLibrary(term, diseaseName || null);
       } catch (_err) {
-        sections.innerHTML = "<article class='card'><p class='small'>Failed to load library data from backend.</p></article>";
+        sections.innerHTML = renderSurfaceMessage("Failed to load library data from backend.");
         return;
       }
 
       if (!filtered.length) {
-        sections.innerHTML = "<article class='card'><p class='small'>No matching diseases found.</p></article>";
+        sections.innerHTML = renderSurfaceMessage("No matching diseases found.");
         return;
       }
-
-      // Map disease names to image files
-      const diseaseImages = {
-        'cataract': 'disease-cataract.png',
-        'conjunctivitis': 'disease-conjunctivitis.png',
-        'keratitis': 'disease-keratitis.png',
-        'normal': 'disease-normal.png',
-        'pterygium': 'disease-normal.png'
-      };
-
-      sections.innerHTML = filtered.map((d, i) => {
-        const imageName = diseaseImages[d.id.toLowerCase()] || 'disease-normal.png';
-        return `
-          <article id="${d.id}" class="card reveal ${i % 2 ? "reveal-right" : "reveal-left"}">
-            <div class="stack">
-              <div style="display: flex; gap: var(--space-4); align-items: flex-start; flex-wrap: wrap;">
-                <img src="../assets/images/${imageName}" alt="${escapeHtml(d.name)}" style="width: 64px; height: 64px; object-fit: contain; flex-shrink: 0;" loading="lazy" />
-                <div style="flex: 1; min-width: 0;">
-                  <h2>${escapeHtml(d.name)} - <span class="rtl" lang="ar" dir="rtl">${escapeHtml(d.name_ar)}</span></h2>
-                </div>
-              </div>
-              <div class="rtl-box rtl" lang="ar" dir="rtl"><p>${escapeHtml(d.short_ar)}</p></div>
-              <div class="rtl-box rtl" lang="ar" dir="rtl"><h3>الأعراض</h3><ul>${d.symptoms_ar.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>
-              <div class="rtl-box warning rtl" lang="ar" dir="rtl"><h3>علامات إنذار</h3><ul>${d.red_flags_ar.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>
-              <div class="rtl-box rtl" lang="ar" dir="rtl"><h3>نصائح آمنة</h3><ul>${d.safe_tips_ar.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>
-              <p class="small rtl" lang="ar" dir="rtl"><strong>متى تراجع الطبيب:</strong> ${escapeHtml(d.when_to_see_doctor_ar)}</p>
-              <a class="btn btn-outline" href="diagnose.html">Back to Diagnose</a>
-            </div>
-          </article>
-        `;
-      }).join("");
+      sections.innerHTML = filtered.map((d, i) => renderDiseaseDetail(d, i)).join("");
 
       initRevealSystem();
       initRipple();
@@ -440,6 +423,8 @@
     const imageInput = byId("image-input");
     const dropzone = byId("dropzone");
     const preview = byId("preview-box");
+    const qualityText = byId("quality-text");
+    const qualityBar = byId("quality-bar");
     const analyzeBtn = byId("analyze-btn");
     const resetBtn = byId("reset-btn");
     const status = byId("status-indicator");
@@ -518,13 +503,14 @@
       try {
         const predicted = await predictImage(currentFile);
         result.innerHTML = renderPredictionResultContent(predicted);
+        initIcons();
         skeleton.classList.add("hidden");
         result.classList.remove("hidden");
         loadingLine.classList.add("hidden");
-        setStatus(status, "done", "Result ready");
+        setStatus(status, predicted.needs_review ? "review" : "done", predicted.needs_review ? "Needs clinical review" : "Result ready");
         bindAccordions(result);
         initRipple();
-        toast("Result ready", "success");
+        toast(predicted.needs_review ? "Low-confidence result" : "Result ready", predicted.needs_review ? "warning" : "success");
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Analysis failed";
         setStatus(status, "error", "Analysis failed");
@@ -541,13 +527,20 @@
       currentFile = null;
       currentDataURL = "";
       imageInput.value = "";
-      preview.innerHTML = "<p>No image selected.</p>";
+      preview.innerHTML = `
+        <div class="preview-placeholder">
+          <span class="preview-kicker">Preview</span>
+          <strong>Image preview will appear here</strong>
+          <span>Use a centered, well-lit image for the cleanest signal.</span>
+        </div>`;
       analyzeBtn.disabled = true;
       resetBtn.disabled = true;
       setStatus(status, "idle", "Idle");
       result.innerHTML = "<p class='small'>No analysis yet. Upload a case and run analysis.</p>";
       message.textContent = "Upload cleared.";
-      message.style.color = "var(--muted)";
+      message.style.color = "var(--text-tertiary)";
+      if (qualityText) qualityText.textContent = "—";
+      if (qualityBar) qualityBar.style.width = "0%";
       toast("Case reset", "info");
     });
 
@@ -577,9 +570,41 @@
         resetBtn.disabled = false;
         setStatus(status, "idle", "Image ready");
         message.textContent = `Selected: ${file.name}`;
-        message.style.color = "var(--ok)";
+        message.style.color = "var(--success-700)";
+        estimateImageQuality(currentDataURL, file);
       };
       reader.readAsDataURL(file);
+    }
+
+    function estimateImageQuality(dataURL, file) {
+      if (!qualityText || !qualityBar) return;
+      const img = new Image();
+      img.onload = () => {
+        const minSide = Math.min(img.width, img.height);
+        const aspectPenalty = Math.abs((img.width / img.height) - 1);
+        let score = 0;
+
+        if (minSide >= 800) score += 45;
+        else if (minSide >= 500) score += 35;
+        else if (minSide >= 300) score += 24;
+        else score += 12;
+
+        if (file.size <= 4 * 1024 * 1024) score += 28;
+        else if (file.size <= 8 * 1024 * 1024) score += 18;
+        else score += 10;
+
+        if (aspectPenalty < 0.25) score += 20;
+        else if (aspectPenalty < 0.6) score += 12;
+        else score += 5;
+
+        score = Math.max(8, Math.min(100, score));
+        qualityBar.style.width = `${score}%`;
+
+        if (score >= 75) qualityText.textContent = `Good · ${score}%`;
+        else if (score >= 50) qualityText.textContent = `Fair · ${score}%`;
+        else qualityText.textContent = `Weak · ${score}%`;
+      };
+      img.src = dataURL;
     }
 
     function openLightbox() {
@@ -600,8 +625,16 @@
     const label = String(prediction.label || "Unknown");
     const confidencePercent = Number(prediction.confidence || 0) * 100;
     const disease = findDiseaseByPrediction(label);
-    const riskLevel = disease ? disease.risk_level : "Unknown";
+    const predictedDisease = findDiseaseByPrediction(prediction.predicted_class || "");
+    const effectiveDisease = disease || predictedDisease;
+    const riskLevel = prediction.needs_review ? "Unknown" : (effectiveDisease ? effectiveDisease.risk_level : "Unknown");
     const riskClass = String(riskLevel || "low").toLowerCase();
+    const secondBestPercent = Number(prediction.second_best_confidence || 0) * 100;
+    const marginPercent = Number(prediction.confidence_margin || 0) * 100;
+    const entropyPercent = Number(prediction.normalized_entropy || 0) * 100;
+    const displayName = disease ? disease.name : (predictedDisease ? predictedDisease.name : getDiseaseName(String(prediction.predicted_class || label)));
+    const displayNameAr = disease ? disease.name_ar : (predictedDisease ? predictedDisease.name_ar : getDiseaseNameAr(String(prediction.predicted_class || label)));
+    const displayShort = disease ? disease.short : "";
 
     // Map risk class to badge class
     const getRiskBadgeClass = (level) => {
@@ -611,75 +644,105 @@
       return 'low';
     };
 
-    // Get disease info dynamically from backend - fallback to empty if not available
-    const diseaseName = disease ? disease.name : "";
-    const diseaseNameAr = disease ? disease.name_ar : "";
-    const diseaseShort = disease ? disease.short : "";
+    const prettyLabel = (raw) => {
+      return String(raw || "")
+        .split("_")
+        .map((part) => part ? part[0].toUpperCase() + part.slice(1) : "")
+        .join(" ");
+    };
+
     const diseaseSymptoms = disease ? (disease.symptoms || []) : [];
     const diseaseRedFlags = disease ? (disease.red_flags || []) : [];
     const diseaseSafeTips = disease ? (disease.safe_tips || []) : [];
     const whenToSeeDoctor = disease ? (disease.when_to_see_doctor || "") : "";
+
+    const confidenceEntries = Object.entries(prediction.all_probabilities || {})
+      .sort((a, b) => Number(b[1]) - Number(a[1]));
+
+    const resultFacts = [];
+    if (displayName) {
+      resultFacts.push(["Predicted Condition", displayName, false]);
+    }
+    if (displayNameAr) {
+      resultFacts.push(["Arabic Name", displayNameAr, true]);
+    }
+    resultFacts.push(["API Label", `<code>${escapeHtml(label)}</code>`, false, true]);
+    resultFacts.push(["Top Raw Class", prettyLabel(prediction.predicted_class), false]);
+    resultFacts.push(["Confidence", `${confidencePercent.toFixed(1)}%`, false]);
+    resultFacts.push(["Needs Review", prediction.needs_review ? "Yes" : "No", false]);
 
     // Build result HTML - only include sections with actual data from backend
     let html = '';
 
     // Result header with badges
     html += '<div class="result-header ltr">';
-    if (diseaseName) {
-      html += `<span class="badge badge-primary"><span class="icon">${getIconByName("activity")}</span>${escapeHtml(diseaseName)}</span>`;
+    if (displayName) {
+      html += `<span class="badge badge-primary"><span class="icon">${getIconByName("activity")}</span>${escapeHtml(displayName)}</span>`;
     }
-    html += `<span class="badge badge-success">Confidence: ${confidencePercent.toFixed(1)}%</span>`;
+    html += `<span class="badge ${prediction.needs_review ? "warning" : "badge-success"}">Confidence: ${confidencePercent.toFixed(1)}%</span>`;
     if (riskLevel !== "Unknown") {
       html += `<span class="badge ${getRiskBadgeClass(riskClass)}">Risk: ${escapeHtml(riskLevel)}</span>`;
     }
+    if (prediction.needs_review) {
+      html += '<span class="badge warning">Review Required</span>';
+    }
     html += '</div>';
 
-    // Disease name in both languages
-    if (diseaseName || diseaseNameAr) {
-      html += '<div class="stack" style="margin-bottom: var(--space-4);">';
-      if (diseaseName) {
-        html += `<h3 class="ltr" style="margin-bottom: var(--space-2);">${escapeHtml(diseaseName)}</h3>`;
-      }
-      if (diseaseNameAr) {
-        html += `<h3 class="rtl" lang="ar" dir="rtl" style="margin-bottom: var(--space-2);">${escapeHtml(diseaseNameAr)}</h3>`;
-      }
-      if (diseaseShort) {
-        html += `<p class="small">${escapeHtml(diseaseShort)}</p>`;
-      }
-      html += '</div>';
+    html += '<section class="result-hero">';
+    html += `<article class="signal-banner ${prediction.needs_review ? "review" : "safe"}">`;
+    html += `<h3><span class="icon" data-icon="${prediction.needs_review ? "warning" : "check"}"></span>${prediction.needs_review ? "Low-confidence classification" : "Confident classification"}</h3>`;
+    if (prediction.needs_review) {
+      html += `<p>The image does not match the trained classes strongly enough. Closest class: <strong>${escapeHtml(displayName || prettyLabel(prediction.predicted_class))}</strong> at ${confidencePercent.toFixed(1)}%, with ${escapeHtml(prettyLabel(prediction.second_best_class))} very close at ${secondBestPercent.toFixed(1)}%.</p>`;
+    } else {
+      html += `<p>The strongest class is <strong>${escapeHtml(displayName || prettyLabel(prediction.predicted_class))}</strong> with a margin of ${marginPercent.toFixed(1)}% over the next class.</p>`;
     }
-
-    // Analysis results card - only show if we have data
-    html += '<div class="result-grid ltr">';
-    html += '<article class="card">';
-    html += '<h3><span class="icon" data-icon="activity"></span>Analysis Results</h3>';
-    html += '<ul class="plain-list">';
-    if (diseaseName) {
-      html += `<li><span class="icon" data-icon="check"></span><strong>Predicted Condition:</strong> ${escapeHtml(diseaseName)}</li>`;
-    }
-    if (diseaseNameAr) {
-      html += `<li><span class="icon" data-icon="check"></span><strong>Arabic Name:</strong> ${escapeHtml(diseaseNameAr)}</li>`;
-    }
-    html += `<li><span class="icon" data-icon="check"></span><strong>Confidence Level:</strong> ${confidencePercent.toFixed(1)}%</li>`;
-    html += '</ul>';
     html += '</article>';
 
-    // Clinical guidance - only show if we have content from backend
-    if (disease && disease.safe_tips && disease.safe_tips.length > 0) {
-      html += '<article class="card">';
-      html += '<h3><span class="icon" data-icon="shield"></span>Clinical Guidance</h3>';
-      html += '<ul class="plain-list">';
-      disease.safe_tips.forEach(tip => {
-        html += `<li><span class="icon" data-icon="check"></span>${escapeHtml(tip)}</li>`;
-      });
-      html += '</ul>';
-      html += '</article>';
+    html += '<div class="result-title">';
+    if (displayName) {
+      html += `<h3 class="ltr">${escapeHtml(displayName)}</h3>`;
+    }
+    if (displayNameAr) {
+      html += `<p class="rtl" lang="ar" dir="rtl">${escapeHtml(displayNameAr)}</p>`;
+    } else {
+      html += `<p>${prediction.needs_review ? "This output should be treated as triage support only." : "Result is inside the trained class space."}</p>`;
+    }
+    if (displayShort) {
+      html += `<p class="small">${escapeHtml(displayShort)}</p>`;
     }
     html += '</div>';
+
+    html += '<div class="metric-strip">';
+    html += `<article class="metric-tile"><span>Top class</span><strong>${escapeHtml(prettyLabel(prediction.predicted_class))}</strong></article>`;
+    html += `<article class="metric-tile"><span>Runner-up</span><strong>${escapeHtml(prettyLabel(prediction.second_best_class))}</strong></article>`;
+    html += `<article class="metric-tile"><span>Margin / Entropy</span><strong>${marginPercent.toFixed(1)}% / ${entropyPercent.toFixed(1)}%</strong></article>`;
+    html += '</div>';
+    html += '</section>';
+
+    html += '<div class="result-grid result-grid-primary ltr">';
+    html += renderResultFactsCard(resultFacts);
+    html += renderConfidenceCard(confidenceEntries, prettyLabel);
+    html += '</div>';
+
+    const secondaryCards = [];
+    if (prediction.needs_review) {
+      secondaryCards.push(renderReviewCard());
+    }
+
+    if (diseaseSafeTips.length > 0) {
+      secondaryCards.push(renderClinicalGuidanceCard(diseaseSafeTips));
+    }
+
+    if (secondaryCards.length > 0) {
+      const secondaryGridClass = secondaryCards.length === 1
+        ? "result-grid result-grid-secondary result-grid-secondary-single ltr"
+        : "result-grid result-grid-secondary ltr";
+      html += `<div class="${secondaryGridClass}">${secondaryCards.join("")}</div>`;
+    }
 
     // Symptoms - only if available from backend
     if (diseaseSymptoms.length > 0) {
-      html += '<article class="card stack ltr" style="margin-top: var(--space-4);">';
+      html += '<article class="card stack ltr stack-panel">';
       html += '<h3><span class="icon" data-icon="activity"></span>Common Symptoms</h3>';
       html += '<ul class="plain-list">';
       diseaseSymptoms.forEach(s => {
@@ -691,7 +754,7 @@
 
     // Red flags - only if available from backend
     if (diseaseRedFlags.length > 0) {
-      html += '<article class="card stack ltr" style="margin-top: var(--space-4); border-color: var(--danger-300); background: var(--danger-50);">';
+      html += '<article class="card stack ltr stack-panel stack-panel-danger">';
       html += '<h3><span class="icon" data-icon="warning"></span>Warning Signs - Seek Immediate Care</h3>';
       html += '<ul class="plain-list">';
       diseaseRedFlags.forEach(f => {
@@ -703,25 +766,81 @@
 
     // When to see doctor - only if available from backend
     if (whenToSeeDoctor) {
-      html += `<article class="card stack rtl-box rtl" lang="ar" dir="rtl" style="margin-top: var(--space-4);">`;
+      html += `<article class="card stack rtl-box rtl stack-panel" lang="ar" dir="rtl">`;
       html += '<h3>متى يجب مراجعة الطبيب</h3>';
       html += `<p>${escapeHtml(whenToSeeDoctor)}</p>`;
       html += '</article>';
     }
 
-    // Technical details accordion - only raw API response, no static text
-    html += accordionMarkup([
-      {
-        title: "Technical Details",
-        content: `
-          <div class="tech-details ltr">
-            <p><strong>Raw API Response:</strong></p>
-            <pre class="api-json">${escapeHtml(JSON.stringify(prediction, null, 2))}</pre>
-          </div>`
-      }
-    ]);
-
     return html;
+  }
+
+  function renderResultFactsCard(facts) {
+    return `
+      <article class="card result-card">
+        <h3><span class="icon" data-icon="activity"></span>Analysis Results</h3>
+        <div class="fact-list">
+          ${facts.map(([label, value, isRtl = false, isHtml = false]) => `
+            <div class="fact-row">
+              <span class="fact-label"><span class="icon" data-icon="check"></span>${escapeHtml(label)}</span>
+              <span class="fact-value ${isRtl ? "rtl" : ""}" ${isRtl ? 'lang="ar" dir="rtl"' : ""}>${isHtml ? value : escapeHtml(value)}</span>
+            </div>
+          `).join("")}
+        </div>
+      </article>
+    `;
+  }
+
+  function renderConfidenceCard(confidenceEntries, prettyLabel) {
+    return `
+      <article class="card confidence-panel">
+        <h3><span class="icon" data-icon="activity"></span>Confidence Breakdown</h3>
+        <div class="confidence-list">
+          ${confidenceEntries.map(([entryLabel, value], index) => {
+            const percent = Number(value || 0) * 100;
+            return `
+              <div class="confidence-row">
+                <div class="confidence-meta">
+                  <div class="confidence-label">
+                    <span class="badge ${index === 0 ? "badge-primary" : "low"}">${index + 1}</span>
+                    <strong>${escapeHtml(prettyLabel(entryLabel))}</strong>
+                  </div>
+                  <span class="confidence-value">${percent.toFixed(1)}%</span>
+                </div>
+                <div class="confidence-track">
+                  <div class="confidence-fill ${index === 0 ? "is-top" : ""}" style="width:${Math.max(2, Math.min(100, percent))}%"></div>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+        <p class="mini-note">When the top two classes are too close, the backend returns <code>unrecognized</code> to avoid a misleading diagnosis.</p>
+      </article>
+    `;
+  }
+
+  function renderReviewCard() {
+    return `
+      <article class="card review-card">
+        <h3><span class="icon" data-icon="warning"></span>Review Guidance</h3>
+        <ul class="plain-list">
+          <li><span class="icon" data-icon="check"></span>Do not treat this as a confirmed diagnosis.</li>
+          <li><span class="icon" data-icon="check"></span>Request another image with better focus, lighting, or framing.</li>
+          <li><span class="icon" data-icon="check"></span>Use the closest class only as a hint for manual review.</li>
+        </ul>
+      </article>
+    `;
+  }
+
+  function renderClinicalGuidanceCard(tips) {
+    return `
+      <article class="card guidance-card">
+        <h3><span class="icon" data-icon="shield"></span>Clinical Guidance</h3>
+        <ul class="plain-list">
+          ${tips.map((tip) => `<li><span class="icon" data-icon="check"></span>${escapeHtml(tip)}</li>`).join("")}
+        </ul>
+      </article>
+    `;
   }
 
   function getDiseaseName(label) {
@@ -758,12 +877,12 @@
       try {
         rows = await listResults(value === "all" ? null : value);
       } catch (_err) {
-        container.innerHTML = "<p class='small'>Failed to load backend results.</p>";
+        container.innerHTML = renderSurfaceMessage("Failed to load backend results.");
         return;
       }
 
       if (!rows.length) {
-        container.innerHTML = "<p class='small'>No entries for this filter.</p>";
+        container.innerHTML = renderSurfaceMessage("No entries for this filter.");
         return;
       }
 
@@ -853,7 +972,7 @@
       initRevealSystem();
       initRipple();
     } catch (_err) {
-      target.innerHTML = "<article class='card'><p class='small'>Unable to load About content from backend.</p></article>";
+      target.innerHTML = renderSurfaceMessage("Unable to load About content from backend.");
     }
   }
 
@@ -887,7 +1006,7 @@
       initIcons();
       initRevealSystem();
     } catch (_err) {
-      target.innerHTML = "<article class='card'><p class='small'>Unable to load Safety content from backend.</p></article>";
+      target.innerHTML = renderSurfaceMessage("Unable to load Safety content from backend.");
     }
   }
 
@@ -918,22 +1037,25 @@
       initRevealSystem();
       initTiltCards();
     } catch (_err) {
-      target.innerHTML = "<article class='card'><p class='small'>Unable to load Education content from backend.</p></article>";
+      target.innerHTML = renderSurfaceMessage("Unable to load Education content from backend.");
     }
   }
 
   function accordionMarkup(items) {
-    return items.map((item, idx) => `
+    return items.map((item, idx) => {
+      const isOpen = typeof item.open === "boolean" ? item.open : idx === 0;
+      return `
       <div class="accordion-item">
-        <button class="accordion-trigger" type="button" aria-expanded="${idx === 0 ? "true" : "false"}">
+        <button class="accordion-trigger" type="button" aria-expanded="${isOpen ? "true" : "false"}">
           <span>${escapeHtml(item.title)}</span>
           <span class="icon">${getIconByName("chevron")}</span>
         </button>
-        <div class="accordion-panel" style="max-block-size:${idx === 0 ? "320px" : "0px"}">
+        <div class="accordion-panel" style="max-block-size:${isOpen ? "320px" : "0px"}">
           <div class="accordion-panel-inner">${item.content}</div>
         </div>
       </div>
-    `).join("");
+    `;
+    }).join("");
   }
 
   function bindAccordions(scope) {
@@ -996,6 +1118,13 @@
     return data || {};
   }
 
+  function normalizeCollectionResponse(data) {
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.data)) return data.data;
+    if (data && Array.isArray(data.items)) return data.items;
+    return [];
+  }
+
   function toast(text, type = "info") {
     const root = byId("toast-root");
     if (!root) return;
@@ -1013,13 +1142,12 @@
       ? `${CONTENT_API_BASE}/results?prediction=${encodeURIComponent(prediction)}`
       : `${CONTENT_API_BASE}/results`;
     const response = await fetch(url);
-    return parseApiResponse(response);
+    return normalizeCollectionResponse(await parseApiResponse(response));
   }
   async function deleteResult(id) {
     const response = await fetch(`${CONTENT_API_BASE}/results/${encodeURIComponent(id)}`, { method: "DELETE" });
     return parseApiResponse(response);
   }
-  function delay(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
   async function getSectionContent(sectionType) {
     const response = await fetch(`${CONTENT_API_BASE}/content/${encodeURIComponent(sectionType)}`);
     return parseApiResponse(response);
@@ -1030,7 +1158,7 @@
     if (diseaseName && diseaseName.trim()) params.set("name", diseaseName.trim());
     const query = params.toString();
     const response = await fetch(`${CONTENT_API_BASE}/library${query ? `?${query}` : ""}`);
-    return parseApiResponse(response);
+    return normalizeCollectionResponse(await parseApiResponse(response));
   }
   function escapeHtml(text) {
     return String(text)

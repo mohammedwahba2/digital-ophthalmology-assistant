@@ -135,9 +135,16 @@ async def run_prediction(
     # -------------------------
     try:
         result = predict_image_detailed(file_path)
-        label = result["predicted_class"]
+        label = result["label"]
         confidence = result["confidence"]
-        logger.info(f"Prediction completed: {label} ({confidence:.4f}) - Level: {result['confidence_level']}")
+        logger.info(
+            "Prediction completed: label=%s top=%s confidence=%.4f level=%s review=%s",
+            label,
+            result["predicted_class"],
+            confidence,
+            result["confidence_level"],
+            result["needs_review"],
+        )
     except FileNotFoundError as e:
         logger.error(f"Model file not found: {e}")
         raise HTTPException(
@@ -175,8 +182,13 @@ async def run_prediction(
     # -------------------------
     return {
         "label": label,
+        "predicted_class": result["predicted_class"],
         "confidence": confidence,
         "confidence_level": result["confidence_level"],
         "all_probabilities": result["all_probabilities"],
         "needs_review": result["needs_review"],
+        "second_best_class": result["second_best_class"],
+        "second_best_confidence": result["second_best_confidence"],
+        "confidence_margin": result["confidence_margin"],
+        "normalized_entropy": result["normalized_entropy"],
     }

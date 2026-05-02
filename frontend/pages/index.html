@@ -17,7 +17,7 @@
   <header class="topbar">
     <div class="container topbar-inner">
       <a class="brand" href="index.html"><img src="../assets/doa_header_logo.svg" alt="Digital Ophthalmology Assistant" class="brand-logo" /></a>
-      <!-- <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle navigation"><span class="icon" data-icon="settings"></span>Menu</button> -->
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle navigation"><span class="icon" data-icon="settings"></span><span>Menu</span></button>
       <nav id="site-nav" class="nav" aria-label="Primary">
         <a href="index.html" aria-current="page">Home</a>
         <a href="diseases.html">Disease Library</a>
@@ -25,9 +25,9 @@
         <a href="safety.html">Safety</a>
         <a href="about.html">About</a>
       </nav>
-      <div>
+      <div class="topbar-actions">
         <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme"><span class="icon theme-icon" data-icon="sun"></span></button>
-        <a class="btn btn-primary btn-sm header-btn"   href="diagnose.html">
+        <a class="btn btn-primary btn-sm header-btn" href="diagnose.html">
           Start Diagnosis
         </a>
       </div>
@@ -67,9 +67,9 @@
               </div>
               <div class="scan-line"></div>
               <div class="ai-badges">
-                <div class="ai-badge badge-1"><div class="dot" style="background:var(--success-500)"></div>Diabetic Retinopathy</div>
-                <div class="ai-badge badge-2"><div class="dot" style="background:var(--primary-500)"></div>Optic Disc: Normal</div>
-                <div class="ai-badge badge-3"><div class="dot" style="background:var(--warning-500)"></div>Conf. 89.4%</div>
+                <div class="ai-badge badge-1"><div class="dot dot-success"></div>Diabetic Retinopathy</div>
+                <div class="ai-badge badge-2"><div class="dot dot-primary"></div>Optic Disc: Normal</div>
+                <div class="ai-badge badge-3"><div class="dot dot-warning"></div>Conf. 89.4%</div>
               </div>
             </div>
           </div>
@@ -141,10 +141,10 @@
 
     <section class="section reveal reveal-scale">
       <div class="container">
-        <div class="card stack" style="text-align:center;">
+        <div class="card stack cta-card cta-card-center">
           <h2>Move from Image Upload to Safer Decisions</h2>
           <p class="small">Use the diagnosis workspace to review model outputs and patient guidance.</p>
-          <div class="actions" style="justify-content:center;">
+          <div class="actions actions-center">
             <a class="btn btn-primary" href="diagnose.html">Open Diagnosis Workspace</a>
           </div>
         </div>

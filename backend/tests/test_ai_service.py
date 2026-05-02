@@ -1,7 +1,7 @@
 """Tests for AI service module.
 
 This module tests the core AI inference functionality, including the
-Center Crop preprocessing algorithm and model loading.
+preprocessing pipeline and model loading.
 """
 
 import pytest
@@ -9,83 +9,13 @@ from PIL import Image
 import numpy as np
 
 from app.services.ai_service import (
-    _center_crop,
     preprocess_image,
+    build_prediction_result,
+    normalize_class_name,
     CLASS_NAMES,
     IMG_SIZE,
+    UNKNOWN_LABEL,
 )
-
-
-class TestCenterCropAlgorithm:
-    """Tests for the custom Center Crop preprocessing algorithm.
-    
-    As described in the project methodology, this algorithm is designed
-    to isolate the cornea and lens region by cropping the central portion
-    of the image, eliminating peripheral noise such as eyelashes, skin,
-    and lighting artifacts.
-    """
-    
-    def test_center_crop_preserves_aspect_ratio(self):
-        """Test that center crop maintains the original aspect ratio."""
-        # Create test images with different aspect ratios
-        test_sizes = [(100, 100), (200, 100), (100, 200), (500, 300)]
-        
-        for width, height in test_sizes:
-            img = Image.new('RGB', (width, height), color=(255, 0, 0))
-            cropped = _center_crop(img)
-            
-            # Check that the cropped image is centered
-            # The crop should remove 20% from each side (keeping 60%)
-            expected_width = int(width * 0.6)
-            expected_height = int(height * 0.6)
-            
-            # Allow 1 pixel tolerance for rounding
-            assert abs(cropped.size[0] - expected_width) <= 1
-            assert abs(cropped.size[1] - expected_height) <= 1
-    
-    def test_center_crop_removes_periphery(self):
-        """Test that center crop effectively removes peripheral regions."""
-        # Create an image with distinct regions
-        img = Image.new('RGB', (100, 100), color=(0, 0, 0))  # Black background
-        
-        # The center crop should focus on the middle 60%
-        cropped = _center_crop(img)
-        
-        # Cropped image should be smaller than original
-        assert cropped.size[0] < img.size[0]
-        assert cropped.size[1] < img.size[1]
-    
-    def test_center_crop_custom_ratio(self):
-        """Test center crop with custom crop ratio."""
-        img = Image.new('RGB', (100, 100), color=(255, 0, 0))
-        
-        # Test with 50% crop ratio
-        cropped = _center_crop(img, crop_ratio=0.5)
-        expected_size = int(100 * 0.5)
-        
-        assert abs(cropped.size[0] - expected_size) <= 1
-        assert abs(cropped.size[1] - expected_size) <= 1
-    
-    def test_center_crop_handles_various_sizes(self):
-        """Test that center crop handles various image sizes correctly."""
-        test_cases = [
-            (50, 50),    # Small square
-            (1000, 1000),  # Large square
-            (640, 480),    # Standard camera resolution
-            (1920, 1080),  # Full HD
-            (100, 200),    # Portrait orientation
-            (200, 100),    # Landscape orientation
-        ]
-        
-        for width, height in test_cases:
-            img = Image.new('RGB', (width, height), color=(128, 128, 128))
-            cropped = _center_crop(img)
-            
-            # Should produce valid image
-            assert cropped.size[0] > 0
-            assert cropped.size[1] > 0
-            assert cropped.size[0] <= width
-            assert cropped.size[1] <= height
 
 
 class TestClassNames:
@@ -122,8 +52,14 @@ class TestClassNames:
         This order MUST match the training configuration for correct predictions.
         """
         expected_order = ("healthy_eye", "conjunctivitis", "cataract", "keratitis")
-        assert CLASS_NAMES == expected_order, \
+        assert tuple(CLASS_NAMES) == expected_order, \
             f"Class order mismatch. Expected {expected_order}, got {CLASS_NAMES}"
+
+    def test_training_aliases_are_normalized(self):
+        """Notebook labels should map to stable API labels."""
+        assert normalize_class_name("Conjunctivitis Recognition") == "conjunctivitis"
+        assert normalize_class_name("Cataract dataset") == "cataract"
+        assert normalize_class_name("healthy_eye") == "healthy_eye"
 
 
 class TestImagePreprocessing:
@@ -148,3 +84,30 @@ class TestImagePreprocessing:
         # After preprocessing, values should be normalized
         # This is a conceptual test - actual implementation would need to test the array
         pass
+
+
+class TestPredictionPostProcessing:
+    """Tests for probability-to-response conversion."""
+
+    def test_high_confidence_prediction_keeps_label(self):
+        result = build_prediction_result(np.array([0.91, 0.05, 0.03, 0.01], dtype=np.float32))
+
+        assert result["label"] == "healthy_eye"
+        assert result["predicted_class"] == "healthy_eye"
+        assert result["needs_review"] is False
+        assert result["confidence_level"] == "high"
+
+    def test_low_confidence_prediction_becomes_unrecognized(self):
+        result = build_prediction_result(np.array([0.27, 0.26, 0.24, 0.23], dtype=np.float32))
+
+        assert result["label"] == UNKNOWN_LABEL
+        assert result["predicted_class"] == "healthy_eye"
+        assert result["needs_review"] is True
+        assert result["confidence_level"] == "low"
+
+    def test_small_probabilities_keep_precision(self):
+        result = build_prediction_result(np.array([0.999998, 0.000001, 0.0000006, 0.0000004], dtype=np.float32))
+
+        assert result["all_probabilities"]["conjunctivitis"] == 0.000001
+        assert result["all_probabilities"]["cataract"] == 0.000001
+        assert result["all_probabilities"]["keratitis"] == 0.0

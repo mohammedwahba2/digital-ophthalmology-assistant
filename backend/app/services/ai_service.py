@@ -1,12 +1,10 @@
-"""
-AI inference service for eye disease classification
-(Aligned with training pipeline - MobileNetV2 v2)
-"""
+"""AI inference service for eye disease classification."""
 
+import json
+import math
 import threading
 from pathlib import Path
 from typing import Tuple
-import json
 
 import numpy as np
 from PIL import Image
@@ -18,15 +16,46 @@ import tensorflow as tf
 
 IMG_SIZE = 224
 
-# 🔥 Load class names dynamically (prevents mismatch)
+# Load class names dynamically.
 CLASS_PATH = Path(__file__).resolve().parents[2] / "models" / "class_names.json"
 
 with open(CLASS_PATH) as f:
-    CLASS_NAMES = json.load(f)
+    _MODEL_CLASS_NAMES = json.load(f)
 
-# Confidence thresholds
-HIGH_CONFIDENCE = 0.70
-LOW_CONFIDENCE = 0.40
+CLASS_NAME_ALIASES = {
+    "healthy_eye": "healthy_eye",
+    "normal": "healthy_eye",
+    "conjunctivitis recognition": "conjunctivitis",
+    "conjunctivitis": "conjunctivitis",
+    "cataract dataset": "cataract",
+    "cataract": "cataract",
+    "keratitis": "keratitis",
+}
+
+UNKNOWN_LABEL = "unrecognized"
+
+
+def normalize_class_name(name: str) -> str:
+    """Map notebook/training labels to stable public API labels."""
+    normalized = "_".join(str(name).strip().lower().split())
+    alias_key = normalized.replace("_", " ")
+    return CLASS_NAME_ALIASES.get(alias_key, normalized)
+
+
+CLASS_NAMES = tuple(normalize_class_name(name) for name in _MODEL_CLASS_NAMES)
+
+if len(set(CLASS_NAMES)) != len(CLASS_NAMES):
+    raise ValueError(
+        "Normalized class names must remain unique. "
+        f"Got raw={_MODEL_CLASS_NAMES!r}, normalized={CLASS_NAMES!r}",
+    )
+
+# Confidence / abstention thresholds.
+HIGH_CONFIDENCE = 0.80
+MEDIUM_CONFIDENCE = 0.60
+LOW_CONFIDENCE = 0.45
+MIN_MARGIN = 0.15
+MAX_NORMALIZED_ENTROPY = 0.85
 
 # ======================
 # Singleton DL Model
@@ -35,7 +64,7 @@ LOW_CONFIDENCE = 0.40
 _model = None
 _lock = threading.Lock()
 
-# 🔥 Correct model path (NEW MODEL)
+# Correct model path.
 DEFAULT_MODEL_PATH = Path(__file__).resolve().parents[2] / "models" / "eye_disease_model_v2.keras"
 
 
@@ -66,7 +95,7 @@ def get_model(model_path: Path | str | None = None) -> tf.keras.Model:
 
 
 # ======================
-# Preprocessing (🔥 مطابق للموديل 100%)
+# Preprocessing
 # ======================
 
 def preprocess_image(image_path: str | Path) -> np.ndarray:
@@ -75,13 +104,11 @@ def preprocess_image(image_path: str | Path) -> np.ndarray:
     if not path.exists():
         raise FileNotFoundError(f"Image not found: {path}")
 
-    # Load image
     img = Image.open(path).convert("RGB")
     arr = np.asarray(img, dtype=np.float32)
 
     h, w = arr.shape[:2]
 
-    # 🔥 SAME AS TRAINING
     scale = 256 / min(h, w)
     new_w, new_h = int(w * scale), int(h * scale)
 
@@ -97,11 +124,68 @@ def preprocess_image(image_path: str | Path) -> np.ndarray:
 
     arr = arr[start_h:start_h + IMG_SIZE, start_w:start_w + IMG_SIZE]
 
-    # Normalize
     arr = arr / 255.0
 
-    # Expand dims
     return np.expand_dims(arr, axis=0)
+
+
+def _round_probability(value: float) -> float:
+    """Keep enough precision so small probabilities do not collapse to zero."""
+    return round(float(value), 6)
+
+
+def _normalized_entropy(probabilities: np.ndarray) -> float:
+    """Return entropy scaled to [0, 1]. High entropy means uncertain output."""
+    probs = np.clip(probabilities.astype(np.float64), 1e-12, 1.0)
+    entropy = -np.sum(probs * np.log(probs))
+    return float(entropy / math.log(len(probs)))
+
+
+def build_prediction_result(probabilities: np.ndarray) -> dict:
+    """Convert raw softmax output into a safer API response."""
+    probs = np.asarray(probabilities, dtype=np.float32)
+    if probs.ndim != 1 or len(probs) != len(CLASS_NAMES):
+        raise ValueError(
+            f"Expected {len(CLASS_NAMES)} class probabilities, got shape={probs.shape}",
+        )
+
+    sorted_indices = np.argsort(probs)[::-1]
+    top_idx = int(sorted_indices[0])
+    top_prob = float(probs[top_idx])
+    second_prob = float(probs[sorted_indices[1]]) if len(sorted_indices) > 1 else 0.0
+    margin = top_prob - second_prob
+    entropy = _normalized_entropy(probs)
+
+    predicted_class = CLASS_NAMES[top_idx]
+    is_low_confidence = top_prob < LOW_CONFIDENCE
+    is_ambiguous = margin < MIN_MARGIN
+    is_high_entropy = entropy > MAX_NORMALIZED_ENTROPY
+    needs_review = is_low_confidence or is_ambiguous or is_high_entropy
+
+    if top_prob >= HIGH_CONFIDENCE and margin >= MIN_MARGIN:
+        confidence_level = "high"
+    elif top_prob >= MEDIUM_CONFIDENCE and margin >= MIN_MARGIN:
+        confidence_level = "medium"
+    else:
+        confidence_level = "low"
+
+    public_label = UNKNOWN_LABEL if needs_review else predicted_class
+    all_probabilities = {
+        CLASS_NAMES[i]: _round_probability(probs[i]) for i in range(len(CLASS_NAMES))
+    }
+
+    return {
+        "label": public_label,
+        "predicted_class": predicted_class,
+        "confidence": _round_probability(top_prob),
+        "confidence_level": confidence_level,
+        "all_probabilities": all_probabilities,
+        "needs_review": needs_review,
+        "second_best_class": CLASS_NAMES[int(sorted_indices[1])] if len(sorted_indices) > 1 else predicted_class,
+        "second_best_confidence": _round_probability(second_prob),
+        "confidence_margin": _round_probability(margin),
+        "normalized_entropy": _round_probability(entropy),
+    }
 
 
 # ======================
@@ -113,9 +197,8 @@ def predict_image(image_path: str | Path) -> Tuple[str, float]:
     batch = preprocess_image(image_path)
 
     preds = model.predict(batch, verbose=0)[0]
-
-    idx = int(np.argmax(preds))
-    return CLASS_NAMES[idx], float(preds[idx])
+    result = build_prediction_result(preds)
+    return result["label"], float(result["confidence"])
 
 
 def predict_image_detailed(image_path: str | Path) -> dict:
@@ -123,31 +206,4 @@ def predict_image_detailed(image_path: str | Path) -> dict:
     batch = preprocess_image(image_path)
 
     preds = model.predict(batch, verbose=0)[0]
-
-    idx = int(np.argmax(preds))
-    predicted_class = CLASS_NAMES[idx]
-    confidence = float(preds[idx])
-
-    # Confidence level
-    if confidence >= HIGH_CONFIDENCE:
-        confidence_level = "high"
-        needs_review = False
-    elif confidence >= LOW_CONFIDENCE:
-        confidence_level = "medium"
-        needs_review = False
-    else:
-        confidence_level = "low"
-        needs_review = True
-
-    # All probabilities
-    all_probabilities = {
-        CLASS_NAMES[i]: float(preds[i]) for i in range(len(CLASS_NAMES))
-    }
-
-    return {
-        "predicted_class": predicted_class,
-        "confidence": round(confidence, 4),
-        "confidence_level": confidence_level,
-        "all_probabilities": {k: round(v, 4) for k, v in all_probabilities.items()},
-        "needs_review": needs_review,
-    }
+    return build_prediction_result(preds)
