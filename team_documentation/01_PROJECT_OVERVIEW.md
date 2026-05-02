@@ -102,9 +102,9 @@ A full-stack web application that uses **Deep Learning** to analyze eye images a
 
 ### 1. AI-Powered Diagnosis
 - **Image Upload**: Drag-and-drop or file picker
-- **Real-time Analysis**: ~2-3 seconds inference time
-- **Confidence Scoring**: 0-100% confidence for each prediction
-- **Clinical Notes**: Contextual information for each disease
+- **Real-time Analysis**: ~1-2 seconds inference time
+- **Confidence Scoring**: Enhanced confidence metrics (margin, entropy)
+- **Safety Flags**: Low-confidence predictions flagged for review
 
 ### 2. Disease Library
 - **Comprehensive Database**: Detailed information about each condition
@@ -215,7 +215,7 @@ digital-ophthalmology-assistant/
 │   │
 │   └── README.md                      # Frontend documentation
 │
-├──  team_documentation/             # Team Resources (NEW)
+├──  team_documentation/             # Team Resources
 │   ├── 01_PROJECT_OVERVIEW.md        # This file
 │   ├── 02_AI_TECHNICAL_GUIDE.md      # AI/ML details
 │   ├── 03_BACKEND_API_GUIDE.md       # API documentation
@@ -224,8 +224,7 @@ digital-ophthalmology-assistant/
 │   ├── 06_DEPLOYMENT_GUIDE.md        # Deployment instructions
 │   └── 07_TEAM_ROLES.md              # Team responsibilities
 │
-├── README.md                          # Main project README
-└── DL_MIGRATION_SUMMARY.md           # Deep Learning migration notes
+└── README.md                          # Main project README
 ```
 
 ---
@@ -331,222 +330,6 @@ Proper locking mechanisms ensure concurrent requests don't corrupt data.
 
 ---
 
-*Last Updated: April 29, 2026*  
-*Document Version: 1.0*  
+*Last Updated: May 3, 2026*  
+*Document Version: 1.1*  
 *For: Digital Ophthalmology Assistant Graduation Project Team*
-### 4. Educational Content
-- **Patient Education**: Easy-to-understand explanations
-- **Safety Information**: Clear disclaimers and warnings
-- **Medical Training**: Valuable for students and residents
-
----
-
-## Technology Stack
-
-### Backend
-| Component | Technology | Purpose |
-|-----------|------------|---------|
-| **Framework** | FastAPI | High-performance REST API |
-| **Language** | Python 3.11+ | Backend logic |
-| **AI/ML** | TensorFlow 2.15 | Deep Learning framework |
-| **Model Format** | Keras (.keras) | Neural network serialization |
-| **Database ORM** | SQLAlchemy 2.0 | Database abstraction |
-| **Database** | SQLite (dev) / PostgreSQL (prod) | Data persistence |
-| **Image Processing** | Pillow | Image manipulation |
-| **Model Hub** | Hugging Face Hub | Model distribution |
-
-### Frontend
-| Component | Technology | Purpose |
-|-----------|------------|---------|
-| **Structure** | HTML5 | Semantic markup |
-| **Styling** | CSS3 (Custom) | Responsive design |
-| **Interactivity** | Vanilla JavaScript | No framework dependencies |
-| **Icons** | Custom SVG | Consistent iconography |
-| **Storage** | LocalStorage | User preferences |
-
-### DevOps
-| Component | Technology | Purpose |
-|-----------|------------|---------|
-| **Containerization** | Docker | Consistent environments |
-| **Version Control** | Git | Source code management |
-| **Model Registry** | Hugging Face | Model versioning |
-
----
-
-## Project Structure
-
-```
-digital-ophthalmology-assistant/
-│
-├──  backend/                          # Python FastAPI Backend
-│   ├──  app/
-│   │   ├── main.py                     # Application entry point
-│   │   ├── config.py                   # Configuration management
-│   │   ├── __init__.py                 # Package initialization
-│   │   │
-│   │   ├──  services/                # Business Logic
-│   │   │   ├── ai_service.py          #  AI/ML Service (Deep Learning)
-│   │   │   └── seed_service.py        # Database seeding
-│   │   │
-│   │   ├──  routes/                  # API Endpoints
-│   │   │   ├── predict.py             # Prediction endpoint
-│   │   │   ├── results.py             # History management
-│   │   │   ├── library.py             # Disease library
-│   │   │   ├── content.py             # Educational content
-│   │   │   └── questions.py           # Q&A functionality
-│   │   │
-│   │   ├──  database/                # Database Layer
-│   │   │   ├── db.py                  # Database connection
-│   │   │   └── __init__.py
-│   │   │
-│   │   └──  models/                  # Database Models (SQLAlchemy)
-│   │       ├── prediction.py          # Prediction records
-│   │       ├── library_item.py        # Disease information
-│   │       ├── section.py             # Content sections
-│   │       ├── question.py            # Questions/FAQ
-│   │       └── __init__.py
-│   │
-│   ├── requirements.txt                # Python dependencies
-│   ├── .env.example                   # Environment template
-│   ├── Dockerfile                     # Container configuration
-│   └── README.md                      # Backend documentation
-│
-├──  frontend/                         # Web User Interface
-│   ├──  pages/                      # HTML Pages
-│   │   ├── index.html                # Homepage
-│   │   ├── diagnose.html             # AI Diagnosis page
-│   │   ├── diseases.html             # Disease library
-│   │   ├── history.html              # Prediction history
-│   │   ├── about.html                # About page
-│   │   ├── safety.html               # Safety information
-│   │   └── education.html            # Patient education
-│   │
-│   ├──  styles/                     # CSS Styling
-│   │   └── styles.css                # Main stylesheet
-│   │
-│   ├──  js/                         # JavaScript Logic
-│   │   └── app.js                    # Main application script
-│   │
-│   ├──  assets/                     # Static Assets
-│   │   └── icons.js                  # Icon definitions
-│   │
-│   └── README.md                      # Frontend documentation
-│
-├──  team_documentation/             # Team Resources (NEW)
-│   ├── 01_PROJECT_OVERVIEW.md        # This file
-│   ├── 02_AI_TECHNICAL_GUIDE.md      # AI/ML details
-│   ├── 03_BACKEND_API_GUIDE.md       # API documentation
-│   ├── 04_FRONTEND_GUIDE.md          # Frontend details
-│   ├── 05_DATABASE_SCHEMA.md         # Database design
-│   ├── 06_DEPLOYMENT_GUIDE.md        # Deployment instructions
-│   └── 07_TEAM_ROLES.md              # Team responsibilities
-│
-├── README.md                          # Main project README
-└── DL_MIGRATION_SUMMARY.md           # Deep Learning migration notes
-```
-
----
-
-## Team Documentation Index
-
-This project includes comprehensive documentation for all team members:
-
-###  Available Documentation
-
-1. **[Project Overview](01_PROJECT_OVERVIEW.md)** ← You are here
-   - Executive summary and system architecture
-   - Technology stack and project structure
-
-2. **[AI Technical Guide](02_AI_TECHNICAL_GUIDE.md)**
-   - Deep Learning model architecture
-   - Inference pipeline and preprocessing
-   - Model training and evaluation
-
-3. **[Backend API Guide](03_BACKEND_API_GUIDE.md)**
-   - Complete API reference
-   - Endpoint documentation
-   - Database models and relationships
-
-4. **[Frontend Guide](04_FRONTEND_GUIDE.md)**
-   - Page structure and navigation
-   - JavaScript architecture
-   - UI/UX implementation details
-
-5. **[Database Schema](05_DATABASE_SCHEMA.md)**
-   - Entity relationship diagrams
-   - Table structures and relationships
-   - Data flow and migrations
-
-6. **[Deployment Guide](06_DEPLOYMENT_GUIDE.md)**
-   - Local development setup
-   - Production deployment
-   - Docker containerization
-
-7. **[Team Roles](07_TEAM_ROLES.md)**
-   - Responsibilities and tasks
-   - Discussion preparation
-   - Presentation guidelines
-
----
-
-## Quick Start for Team Members
-
-### For AI/ML Team
-- Focus on: `backend/app/services/ai_service.py`
-- Read: [AI Technical Guide](02_AI_TECHNICAL_GUIDE.md)
-
-### For Backend Team
-- Focus on: `backend/app/` directory
-- Read: [Backend API Guide](03_BACKEND_API_GUIDE.md)
-
-### For Frontend Team
-- Focus on: `frontend/` directory
-- Read: [Frontend Guide](04_FRONTEND_GUIDE.md)
-
-### For Database Team
-- Focus on: `backend/app/database/` and `backend/app/models/`
-- Read: [Database Schema](05_DATABASE_SCHEMA.md)
-
-### For All Team Members
-- Start with this document
-- Understand the complete data flow
-- Review your specific area in detail
-- Prepare questions for team discussions
-
----
-
-## Key Concepts to Understand
-
-### 1. Deep Learning Inference
-The AI model takes an eye image and outputs probabilities for each disease class.
-
-### 2. REST API
-Frontend communicates with backend through HTTP requests (GET, POST, DELETE).
-
-### 3. Database ORM
-SQLAlchemy abstracts database operations, making code database-agnostic.
-
-### 4. Singleton Pattern
-The AI model is loaded once and reused for all predictions (memory efficient).
-
-### 5. Thread Safety
-Proper locking mechanisms ensure concurrent requests don't corrupt data.
-
----
-
-## Next Steps
-
-1. **Read this overview** completely
-2. **Navigate to your specialty documentation**
-3. **Set up local development environment**
-4. **Run the application locally**
-5. **Prepare questions for team discussion**
-
----
-
-** Important**: This is a medical AI system. Always validate predictions clinically and never replace professional medical judgment with AI output.
-
----
-
-*Last Updated: April 29, 2026*  
-*Document Version: 1.0*  

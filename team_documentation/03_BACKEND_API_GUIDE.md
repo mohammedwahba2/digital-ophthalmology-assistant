@@ -10,7 +10,7 @@ The following enhancements have been implemented to improve reliability, scalabi
 
 1. **Standardized Disease Class Names**: All disease labels are now consistently formatted (lowercase with underscores: `healthy_eye`, `conjunctivitis`, `cataract`, `keratitis`).
 
-2. **Enhanced Center Crop Algorithm**: The preprocessing pipeline now implements a proper center-crop algorithm that isolates the cornea and lens region, eliminating peripheral noise (eyelashes, skin, lighting artifacts) as described in the project methodology.
+2. **Improved Preprocessing Pipeline**: The preprocessing now uses a proper scale-then-crop approach: scale shortest side to 256 (maintaining aspect ratio), then center crop to 224×224. This matches the training pipeline exactly.
 
 3. **Request ID Tracking**: Every request now receives a unique UUID for end-to-end tracing, logged in request headers (`X-Request-ID`) for debugging and monitoring.
 
@@ -695,29 +695,54 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 ## AI Service Implementation
 
-### Center Crop Algorithm
+### Preprocessing Pipeline
 
-The custom Center Crop algorithm is a key component of the preprocessing pipeline, as described in the project methodology. It isolates the cornea and lens region by cropping the central 60% of the image, effectively eliminating peripheral noise.
+The preprocessing pipeline matches the training pipeline exactly:
+
+1. **Load and convert to RGB** - Ensures consistent 3-channel input
+2. **Scale to 256** - Shortest side scaled to 256 pixels (maintains aspect ratio)
+3. **Center crop to 224×224** - Focuses on central ocular region
+4. **Normalize to [0, 1]** - Divides pixel values by 255.0
+5. **Expand dimensions** - Adds batch dimension for inference
 
 ```python
 # backend/app/services/ai_service.py
 
-def _center_crop(img: Image.Image, crop_ratio: float = 0.6) -> Image.Image:
-    """Custom Center Crop Algorithm for Ocular Focus.
+def preprocess_image(image_path: str | Path) -> np.ndarray:
+    """Preprocess image for model inference.
     
-    This algorithm isolates the cornea and lens region by cropping the central 
-    portion of the image, effectively eliminating non-pathological noise such 
-    as eyelashes, skin, and lighting artifacts from the periphery.
+    Matches the exact preprocessing used during training:
+    1. Load image and convert to RGB
+    2. Scale so shortest side = 256 (maintaining aspect ratio)
+    3. Center crop to 224x224
+    4. Normalize to [0, 1] by dividing by 255.0
+    5. Expand dimensions for batch inference
     """
-    w, h = img.size
+    path = Path(image_path)
+    img = Image.open(path).convert("RGB")
+    arr = np.asarray(img, dtype=np.float32)
     
-    # Calculate crop boundaries to center on the ocular region
-    left = w * (1 - crop_ratio) / 2
-    top = h * (1 - crop_ratio) / 2
-    right = w * (1 + crop_ratio) / 2
-    bottom = h * (1 + crop_ratio) / 2
+    h, w = arr.shape[:2]
     
-    return img.crop((left, top, right, bottom))
+    # Scale to 256 on shortest side (same as training)
+    scale = 256 / min(h, w)
+    new_w, new_h = int(w * scale), int(h * scale)
+    
+    img = Image.fromarray(arr.astype(np.uint8))
+    img = img.resize((new_w, new_h), Image.Resampling.BILINEAR)
+    
+    arr = np.asarray(img, dtype=np.float32)
+    h, w = arr.shape[:2]
+    
+    # Center crop to 224x224
+    start_h = (h - IMG_SIZE) // 2
+    start_w = (w - IMG_SIZE) // 2
+    arr = arr[start_h:start_h + IMG_SIZE, start_w:start_w + IMG_SIZE]
+    
+    # Normalize
+    arr = arr / 255.0
+    
+    return np.expand_dims(arr, axis=0)
 ```
 
 ### Disease Classification Labels
@@ -750,23 +775,28 @@ pytest tests/ -v
 | Module | Tests | Coverage |
 |--------|-------|----------|
 | `test_predict.py` | Image validation, format support, dimension constraints | Prediction endpoint |
-| `test_ai_service.py` | Center Crop algorithm, class names | AI service |
+| `test_ai_service.py` | Preprocessing pipeline, class name normalization, confidence thresholds | AI service |
 
 ### Example Test
 
 ```python
 # backend/tests/test_ai_service.py
-class TestCenterCropAlgorithm:
-    """Tests for the custom Center Crop preprocessing algorithm."""
+class TestPreprocessingPipeline:
+    """Tests for the preprocessing pipeline."""
     
-    def test_center_crop_preserves_aspect_ratio(self):
-        """Test that center crop maintains the original aspect ratio."""
-        img = Image.new('RGB', (100, 100), color=(255, 0, 0))
-        cropped = _center_crop(img)
+    def test_preprocess_image_output_shape(self):
+        """Test that preprocessing produces correct output shape."""
+        # Create a test image
+        img = Image.new('RGB', (500, 400), color=(128, 128, 128))
+        img.save('/tmp/test_image.jpg')
         
-        expected_size = int(100 * 0.6)
-        assert abs(cropped.size[0] - expected_size) <= 1
-        assert abs(cropped.size[1] - expected_size) <= 1
+        # Preprocess
+        batch = preprocess_image('/tmp/test_image.jpg')
+        
+        # Check output shape (1, 224, 224, 3)
+        assert batch.shape == (1, 224, 224, 3)
+        assert batch.dtype == np.float32
+        assert 0.0 <= batch.min() and batch.max() <= 1.0
 ```
 
 ---
@@ -930,17 +960,25 @@ docker run -p 8000:8000 ophthalmology-api
 
 *For questions about the backend, contact the Backend team lead.*
 
-*Last Updated: April 29, 2026*  
-*Document Version: 1.1*
+*Last Updated: May 3, 2026*  
+*Document Version: 1.2*
 
 ---
 
 ## Changelog
 
+### Version 1.2 (May 3, 2026)
+
+- **Updated**: Preprocessing pipeline now uses scale-then-crop approach (scale to 256, then center crop to 224)
+- **Updated**: Model file renamed to `Eye_Disease_model_v3.keras`
+- **Improved**: Enhanced confidence thresholds (HIGH=0.80, MEDIUM=0.60, LOW=0.45)
+- **Added**: Normalized entropy metric for uncertainty detection
+- **Added**: Confidence margin tracking for ambiguity detection
+- **Fixed**: Class name normalization with alias mapping for training labels
+
 ### Version 1.1 (April 29, 2026)
 
 - **Fixed**: Standardized disease class names (`conjunctivitis`, `cataract` instead of inconsistent names)
-- **Improved**: Center Crop algorithm now properly centers on ocular region with configurable crop ratio
 - **Added**: Request ID tracking middleware for end-to-end request tracing
 - **Added**: Pagination support for `/api/v1/results` endpoint
 - **Added**: Image dimension validation (min 50×50, max 4096×4096 pixels)

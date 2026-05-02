@@ -37,11 +37,14 @@ Our model is built on **MobileNetV2**, a lightweight convolutional neural networ
 |-----------|-------|
 | **Input Shape** | 224 × 224 × 3 (RGB) |
 | **Base Architecture** | MobileNetV2 (pre-trained on ImageNet) |
-| **Custom Layers** | Global Average Pooling + Dense (4 units, softmax) |
+| **Custom Layers** | Global Average Pooling + BatchNormalization + Dense(256) + Dropout(0.5) + Dense(128) + Dropout(0.3) + Dense(4, softmax) |
 | **Output Classes** | 4 (Healthy, Conjunctivitis, Cataract, Keratitis) |
 | **Model Format** | `.keras` (Keras native format) |
-| **Model Size** | ~14 MB |
+| **Model File** | `Eye_Disease_model_v3.keras` |
+| **Model Size** | ~22 MB |
 | **Training Dataset** | Custom eye disease image dataset |
+| **Class Names (Training)** | `["healthy_eye", "Conjunctivitis Recognition", "Cataract dataset", "keratitis"]` |
+| **Class Names (API)** | `["healthy_eye", "conjunctivitis", "cataract", "keratitis"]` |
 
 ### Model Architecture Diagram
 
@@ -84,8 +87,8 @@ The complete inference process consists of 5 stages:
 │ STAGE 3: Image Preprocessing                                   │
 │ - Load image with Pillow                                       │
 │ - Convert to RGB (remove alpha channel if present)             │
-│ - Center crop (60% of original image)                          │
-│ - Resize to 224×224 pixels                                     │
+│ - Scale: shortest side → 256 (maintain aspect ratio)           │
+│ - Center crop to 224×224 pixels                                │
 │ - Normalize pixel values (divide by 255.0)                     │
 │ - Expand dimensions for batch inference                        │
 └─────────────────────────────────────────────────────────────────┘
@@ -99,10 +102,11 @@ The complete inference process consists of 5 stages:
                             ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │ STAGE 5: Post-processing & Response                            │
-│ - Find class with highest probability                          │
-│ - Extract confidence score                                     │
-│ - Map class index to disease name                              │
-│ - Return JSON response with label and confidence               │
+│ - Normalize class names (training → API labels)                │
+│ - Compute confidence metrics (margin, entropy)                 │
+│ - Determine confidence level (high/medium/low)                 │
+│ - Flag low-confidence predictions for review                   │
+│ - Return JSON response with all probabilities                  │
 │ - Save prediction to database for history                      │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -125,6 +129,8 @@ backend/app/services/
 #### 1. Imports and Configuration
 
 ```python
+import json
+import math
 import threading
 from pathlib import Path
 from typing import Tuple
@@ -132,18 +138,41 @@ from typing import Tuple
 import numpy as np
 from PIL import Image
 import tensorflow as tf
-from huggingface_hub import hf_hub_download
 
 # Configuration constants
 IMG_SIZE = 224
-CLASS_NAMES = (
-    "healthy_eye",      # Index 0: Normal
-    "conjunctivitis",   # Index 1: Conjunctivitis
-    "cataract",         # Index 2: Cataract
-    "keratitis",        # Index 3: Keratitis
-)
-MODEL_REPO = "mohamed-wahba77/eye-disease-model"
-MODEL_FILE = "model.keras"
+
+# Load class names dynamically from training (stored in class_names.json)
+CLASS_PATH = Path(__file__).resolve().parents[2] / "models" / "class_names.json"
+with open(CLASS_PATH) as f:
+    CLASS_NAMES = tuple(json.load(f))
+# CLASS_NAMES = ("healthy_eye", "Conjunctivitis Recognition", "Cataract dataset", "keratitis")
+
+# Mapping from training labels to stable public API labels
+CLASS_NAME_ALIASES = {
+    "healthy_eye": "healthy_eye",
+    "normal": "healthy_eye",
+    "conjunctivitis recognition": "conjunctivitis",
+    "conjunctivitis": "conjunctivitis",
+    "cataract dataset": "cataract",
+    "cataract": "cataract",
+    "keratitis": "keratitis",
+}
+
+UNKNOWN_LABEL = "unrecognized"
+
+def normalize_class_name(name: str) -> str:
+    """Map notebook/training labels to stable public API labels."""
+    normalized = "_".join(str(name).strip().lower().split())
+    alias_key = normalized.replace("_", " ")
+    return CLASS_NAME_ALIASES.get(alias_key, normalized)
+
+# Confidence thresholds
+HIGH_CONFIDENCE = 0.80
+MEDIUM_CONFIDENCE = 0.60
+LOW_CONFIDENCE = 0.45
+MIN_MARGIN = 0.15
+MAX_NORMALIZED_ENTROPY = 0.85
 ```
 
 #### 2. Model Loading (Singleton Pattern)
@@ -151,6 +180,8 @@ MODEL_FILE = "model.keras"
 ```python
 _model = None
 _lock = threading.Lock()
+
+DEFAULT_MODEL_PATH = Path(__file__).resolve().parents[2] / "models" / "Eye_Disease_model_v3.keras"
 
 def get_model(model_path: Path | str | None = None) -> tf.keras.Model:
     """Thread-safe singleton DL model loader."""
@@ -164,13 +195,12 @@ def get_model(model_path: Path | str | None = None) -> tf.keras.Model:
             return _model
 
         if model_path is None:
-            # Download from Hugging Face Hub
-            model_path = _download_model()
+            model_path = DEFAULT_MODEL_PATH
         
         model_path = Path(model_path)
         
         if not model_path.exists():
-            raise FileNotFoundError(f"Model file not found at: {model_path}")
+            raise FileNotFoundError(f"Model not found: {model_path}")
 
         _model = tf.keras.models.load_model(str(model_path))
 
@@ -186,66 +216,140 @@ def get_model(model_path: Path | str | None = None) -> tf.keras.Model:
 - **Lazy Loading**: Model loads on first use, not at startup
 - **Warmup**: First prediction prepares GPU/CPU for faster subsequent inferences
 
-#### 3. Image Preprocessing
+#### 3. Image Preprocessing (Matches Training 100%)
 
 ```python
-def _center_crop(img: Image.Image) -> Image.Image:
-    """Crop center 60% of image."""
-    w, h = img.size
-    return img.crop((w*0.2, h*0.2, w*0.8, h*0.8))
-
 def preprocess_image(image_path: str | Path) -> np.ndarray:
-    """Prepare image for model inference."""
+    """Prepare image for model inference.
+    
+    Matches the exact preprocessing used during training:
+    1. Load image and convert to RGB
+    2. Scale so shortest side = 256 (maintaining aspect ratio)
+    3. Center crop to 224x224
+    4. Normalize to [0, 1] by dividing by 255.0
+    5. Expand dimensions for batch inference
+    """
     path = Path(image_path)
 
     if not path.exists():
         raise FileNotFoundError(f"Image not found: {path}")
 
-    # Load and convert to RGB
     img = Image.open(path).convert("RGB")
+    arr = np.asarray(img, dtype=np.float32)
 
-    # Center crop and resize
-    img = _center_crop(img)
-    img = img.resize((IMG_SIZE, IMG_SIZE), Image.Resampling.LANCZOS)
+    h, w = arr.shape[:2]
 
-    # Normalize to [0, 1]
-    arr = np.asarray(img, dtype=np.float32) / 255.0
+    # Scale to 256 on shortest side (same as training)
+    scale = 256 / min(h, w)
+    new_w, new_h = int(w * scale), int(h * scale)
 
-    # Add batch dimension: (224, 224, 3) → (1, 224, 224, 3)
+    img = Image.fromarray(arr.astype(np.uint8))
+    img = img.resize((new_w, new_h), Image.Resampling.BILINEAR)
+
+    arr = np.asarray(img, dtype=np.float32)
+
+    h, w = arr.shape[:2]
+
+    # Center crop to 224x224
+    start_h = (h - IMG_SIZE) // 2
+    start_w = (w - IMG_SIZE) // 2
+
+    arr = arr[start_h:start_h + IMG_SIZE, start_w:start_w + IMG_SIZE]
+
+    # Normalize
+    arr = arr / 255.0
+
     return np.expand_dims(arr, axis=0)
 ```
 
-**Why Center Crop?**
-- Removes peripheral distractions
-- Focuses on the eye region
-- Improves model accuracy by removing irrelevant background
+**Why Scale to 256 First?**
+- Maintains aspect ratio (no distortion)
+- Ensures consistent preprocessing with training
+- The model was trained with this exact scaling approach
+
+**Why Center Crop to 224?**
+- Focuses on the central ocular region
+- Removes peripheral noise (eyelashes, skin, equipment edges)
+- Matches the model's input requirements
 
 **Why Normalize?**
 - Neural networks train better with normalized inputs
 - Pixel values in [0, 1] range stabilize gradient descent
 - Matches preprocessing used during model training
 
-#### 4. Prediction Function
+#### 4. Prediction with Enhanced Post-Processing
 
 ```python
+def build_prediction_result(probabilities: np.ndarray) -> dict:
+    """Convert raw softmax output into a safer API response."""
+    probs = np.asarray(probabilities, dtype=np.float32)
+    
+    sorted_indices = np.argsort(probs)[::-1]
+    top_idx = int(sorted_indices[0])
+    top_prob = float(probs[top_idx])
+    second_prob = float(probs[sorted_indices[1]]) if len(sorted_indices) > 1 else 0.0
+    margin = top_prob - second_prob
+    entropy = _normalized_entropy(probs)
+
+    # Use normalized class name for the predicted class
+    predicted_class = normalize_class_name(CLASS_NAMES[top_idx])
+    
+    # Determine if prediction needs review
+    is_low_confidence = top_prob < LOW_CONFIDENCE
+    is_ambiguous = margin < MIN_MARGIN
+    is_high_entropy = entropy > MAX_NORMALIZED_ENTROPY
+    needs_review = is_low_confidence or is_ambiguous or is_high_entropy
+
+    # Determine confidence level
+    if top_prob >= HIGH_CONFIDENCE and margin >= MIN_MARGIN:
+        confidence_level = "high"
+    elif top_prob >= MEDIUM_CONFIDENCE and margin >= MIN_MARGIN:
+        confidence_level = "medium"
+    else:
+        confidence_level = "low"
+
+    public_label = UNKNOWN_LABEL if needs_review else predicted_class
+    
+    return {
+        "label": public_label,
+        "predicted_class": predicted_class,
+        "confidence": round(top_prob, 6),
+        "confidence_level": confidence_level,
+        "all_probabilities": {
+            normalize_class_name(CLASS_NAMES[i]): round(float(probs[i]), 6) 
+            for i in range(len(CLASS_NAMES))
+        },
+        "needs_review": needs_review,
+        "second_best_class": normalize_class_name(CLASS_NAMES[sorted_indices[1]]),
+        "second_best_confidence": round(second_prob, 6),
+        "confidence_margin": round(margin, 6),
+        "normalized_entropy": round(entropy, 6),
+    }
+
 def predict_image(image_path: str | Path) -> Tuple[str, float]:
     """Run inference on image and return prediction."""
     model = get_model()
     batch = preprocess_image(image_path)
-
-    # Get model predictions
     preds = model.predict(batch, verbose=0)[0]
+    result = build_prediction_result(preds)
+    return result["label"], float(result["confidence"])
 
-    # Find class with highest probability
-    idx = int(np.argmax(preds))
-    
-    # Return class name and confidence score
-    return CLASS_NAMES[idx], float(preds[idx])
+def predict_image_detailed(image_path: str | Path) -> dict:
+    """Run inference and return detailed prediction results."""
+    model = get_model()
+    batch = preprocess_image(image_path)
+    preds = model.predict(batch, verbose=0)[0]
+    return build_prediction_result(preds)
 ```
 
 **Output Explanation:**
-- Returns tuple: `(disease_name, confidence_score)`
-- Example: `("healthy_eye", 0.9234)` means 92.34% confidence it's healthy
+- `label`: The public-facing prediction (or "unrecognized" if low confidence)
+- `predicted_class`: The actual model prediction (normalized class name)
+- `confidence`: Confidence score for the prediction
+- `confidence_level`: "high", "medium", or "low"
+- `all_probabilities`: Full probability distribution over all classes
+- `needs_review`: Boolean flag for low-confidence predictions
+- Additional metrics: margin, entropy, second-best class
 
 ---
 
@@ -294,8 +398,8 @@ get_model(settings.resolved_model_path)
 |------|-----------|-------------|--------------|---------|
 | 1 | Load Image | File on disk | (H, W, 3) | Read image data |
 | 2 | Convert to RGB | (H, W, 4) or (H, W) | (H, W, 3) | Ensure 3 channels |
-| 3 | Center Crop | (H, W, 3) | (0.6H, 0.6W, 3) | Focus on eye |
-| 4 | Resize | (0.6H, 0.6W, 3) | (224, 224, 3) | Match model input |
+| 3 | Scale (shortest=256) | (H, W, 3) | (H', W', 3) | Maintain aspect ratio |
+| 4 | Center Crop | (H', W', 3) | (224, 224, 3) | Focus on eye region |
 | 5 | Normalize | [0, 255] | [0.0, 1.0] | Stabilize inference |
 | 6 | Expand Dims | (224, 224, 3) | (1, 224, 224, 3) | Add batch dimension |
 
@@ -303,15 +407,28 @@ get_model(settings.resolved_model_path)
 
 ```
 Original Image (1000×800)
-    ↓ Center Crop (60%)
-Cropped Image (600×480) - focused on center
-    ↓ Resize
-Resized Image (224×224) - model input size
+    ↓ Scale (shortest side → 256)
+Scaled Image (320×256) - aspect ratio preserved
+    ↓ Center Crop (224×224 from center)
+Cropped Image (224×224) - focused on center
     ↓ Normalize
 Normalized Image - pixel values between 0 and 1
     ↓ Expand Dims
 Batch Image (1, 224, 224, 3) - ready for model
 ```
+
+### Class Name Normalization
+
+The model was trained with specific folder names that differ from the API labels:
+
+| Training Label (from class_names.json) | API Label (normalized) |
+|----------------------------------------|------------------------|
+| `healthy_eye` | `healthy_eye` |
+| `Conjunctivitis Recognition` | `conjunctivitis` |
+| `Cataract dataset` | `cataract` |
+| `keratitis` | `keratitis` |
+
+The `normalize_class_name()` function handles this mapping to ensure consistent API responses.
 
 ---
 
@@ -322,7 +439,7 @@ Batch Image (1, 224, 224, 3) - ready for model
 The model outputs a probability distribution over 4 classes:
 
 ```python
-# Example output
+# Example output (raw probabilities)
 preds = [0.9234, 0.0421, 0.0234, 0.0111]
 #          healthy   conjunctivitis  cataract  keratitis
 
@@ -332,27 +449,51 @@ preds = [0.9234, 0.0421, 0.0234, 0.0111]
 # - 2.34% chance: Cataract
 # - 1.11% chance: Keratitis
 
-# Prediction: "healthy_eye" with 92.34% confidence
+# Full API response:
+{
+    "label": "healthy_eye",           # Public-facing label
+    "predicted_class": "healthy_eye", # Normalized class name
+    "confidence": 0.9234,
+    "confidence_level": "high",
+    "needs_review": False,
+    "all_probabilities": {
+        "healthy_eye": 0.9234,
+        "conjunctivitis": 0.0421,
+        "cataract": 0.0234,
+        "keratitis": 0.0111
+    },
+    "second_best_class": "conjunctivitis",
+    "confidence_margin": 0.8813,
+    "normalized_entropy": 0.1523
+}
 ```
 
 ### Confidence Thresholds
 
-| Confidence | Interpretation | Action |
-|------------|----------------|--------|
-| > 90% | High confidence | Trust prediction |
-| 70-90% | Moderate confidence | Consider prediction, verify clinically |
-| < 70% | Low confidence | Recommend specialist consultation |
+| Threshold | Value | Interpretation |
+|-----------|-------|----------------|
+| `HIGH_CONFIDENCE` | 0.80 | Prediction is reliable |
+| `MEDIUM_CONFIDENCE` | 0.60 | Prediction is moderately reliable |
+| `LOW_CONFIDENCE` | 0.45 | Prediction is uncertain |
+| `MIN_MARGIN` | 0.15 | Minimum gap between top 2 classes |
+| `MAX_NORMALIZED_ENTROPY` | 0.85 | Maximum uncertainty (entropy) |
 
-### Class Mapping
+### Confidence Levels
 
-```python
-CLASS_NAMES = (
-    "healthy_eye",      # Index 0: Normal
-    "conjunctivitis",   # Index 1: Conjunctivitis
-    "cataract",         # Index 2: Cataract
-    "keratitis",        # Index 3: Keratitis
-)
-```
+| Level | Conditions | Action |
+|-------|------------|--------|
+| `high` | confidence ≥ 0.80 AND margin ≥ 0.15 | Trust prediction |
+| `medium` | confidence ≥ 0.60 AND margin ≥ 0.15 | Consider prediction, verify clinically |
+| `low` | Otherwise | Flag for review, recommend specialist |
+
+### Low-Confidence Detection
+
+A prediction is flagged for review (`needs_review=True`) if ANY of:
+- Top probability < `LOW_CONFIDENCE` (0.45)
+- Margin between top 2 classes < `MIN_MARGIN` (0.15)
+- Normalized entropy > `MAX_NORMALIZED_ENTROPY` (0.85)
+
+When flagged, the `label` field returns `"unrecognized"` instead of the predicted class.
 
 ---
 
@@ -471,7 +612,20 @@ curl -X POST http://localhost:8000/predict \
 ```json
 {
   "label": "healthy_eye",
-  "confidence": 0.9234
+  "predicted_class": "healthy_eye",
+  "confidence": 0.9234,
+  "confidence_level": "high",
+  "all_probabilities": {
+    "healthy_eye": 0.9234,
+    "conjunctivitis": 0.0421,
+    "cataract": 0.0234,
+    "keratitis": 0.0111
+  },
+  "needs_review": false,
+  "second_best_class": "conjunctivitis",
+  "second_best_confidence": 0.0421,
+  "confidence_margin": 0.8813,
+  "normalized_entropy": 0.1523
 }
 ```
 
@@ -525,16 +679,18 @@ final_pred = np.mean(predictions, axis=0)
 
 ## Key Takeaways
 
-1. **Model**: MobileNetV2-based CNN, optimized for speed and accuracy
-2. **Input**: 224×224 RGB images, center-cropped and normalized
-3. **Output**: 4-class classification with confidence scores
-4. **Performance**: ~1 second inference time, singleton pattern for efficiency
-5. **Deployment**: Hugging Face Hub for model distribution
-6. **Safety**: Always validate predictions clinically
+1. **Model**: MobileNetV2-based CNN with custom head (BatchNorm, Dense layers, Dropout)
+2. **Input**: 224×224 RGB images, scaled to 256 shortest side then center-cropped
+3. **Output**: 4-class classification with enhanced confidence metrics
+4. **Class Names**: Training labels normalized to stable API labels via `normalize_class_name()`
+5. **Performance**: ~1 second inference time, singleton pattern for efficiency
+6. **Safety**: Low-confidence predictions flagged with `needs_review=True` and `label="unrecognized"`
+7. **Model File**: `Eye_Disease_model_v3.keras` (~22 MB)
+8. **Class Names File**: `class_names.json` (dynamic loading prevents mismatch)
 
 ---
 
 *For questions about the AI system, contact the AI/ML team lead.*
 
-*Last Updated: April 29, 2026*  
-*Document Version: 1.0*
+*Last Updated: May 3, 2026*  
+*Document Version: 2.0*
