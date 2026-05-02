@@ -16,12 +16,13 @@ import tensorflow as tf
 
 IMG_SIZE = 224
 
-# Load class names dynamically.
+# Load class names dynamically from training.
 CLASS_PATH = Path(__file__).resolve().parents[2] / "models" / "class_names.json"
 
 with open(CLASS_PATH) as f:
-    _MODEL_CLASS_NAMES = json.load(f)
+    CLASS_NAMES = tuple(json.load(f))
 
+# Mapping from training labels to stable public API labels
 CLASS_NAME_ALIASES = {
     "healthy_eye": "healthy_eye",
     "normal": "healthy_eye",
@@ -42,12 +43,13 @@ def normalize_class_name(name: str) -> str:
     return CLASS_NAME_ALIASES.get(alias_key, normalized)
 
 
-CLASS_NAMES = tuple(normalize_class_name(name) for name in _MODEL_CLASS_NAMES)
+# Normalized class names for API use (must be unique)
+_NORMALIZED_CLASS_NAMES = tuple(normalize_class_name(name) for name in CLASS_NAMES)
 
-if len(set(CLASS_NAMES)) != len(CLASS_NAMES):
+if len(set(_NORMALIZED_CLASS_NAMES)) != len(_NORMALIZED_CLASS_NAMES):
     raise ValueError(
         "Normalized class names must remain unique. "
-        f"Got raw={_MODEL_CLASS_NAMES!r}, normalized={CLASS_NAMES!r}",
+        f"Got raw={CLASS_NAMES!r}, normalized={_NORMALIZED_CLASS_NAMES!r}",
     )
 
 # Confidence / abstention thresholds.
@@ -64,8 +66,8 @@ MAX_NORMALIZED_ENTROPY = 0.85
 _model = None
 _lock = threading.Lock()
 
-# Correct model path.
-DEFAULT_MODEL_PATH = Path(__file__).resolve().parents[2] / "models" / "eye_disease_model_v2.keras"
+# Correct model path (matches training notebook).
+DEFAULT_MODEL_PATH = Path(__file__).resolve().parents[2] / "models" / "Eye_Disease_model_v3.keras"
 
 
 def get_model(model_path: Path | str | None = None) -> tf.keras.Model:
@@ -95,10 +97,19 @@ def get_model(model_path: Path | str | None = None) -> tf.keras.Model:
 
 
 # ======================
-# Preprocessing
+# Preprocessing (matches training pipeline 100%)
 # ======================
 
 def preprocess_image(image_path: str | Path) -> np.ndarray:
+    """Preprocess image for model inference.
+    
+    Matches the exact preprocessing used during training:
+    1. Load image and convert to RGB
+    2. Scale so shortest side = 256 (maintaining aspect ratio)
+    3. Center crop to 224x224
+    4. Normalize to [0, 1] by dividing by 255.0
+    5. Expand dimensions for batch inference
+    """
     path = Path(image_path)
 
     if not path.exists():
@@ -109,6 +120,7 @@ def preprocess_image(image_path: str | Path) -> np.ndarray:
 
     h, w = arr.shape[:2]
 
+    # Scale to 256 on shortest side (same as training)
     scale = 256 / min(h, w)
     new_w, new_h = int(w * scale), int(h * scale)
 
@@ -119,11 +131,13 @@ def preprocess_image(image_path: str | Path) -> np.ndarray:
 
     h, w = arr.shape[:2]
 
+    # Center crop to 224x224
     start_h = (h - IMG_SIZE) // 2
     start_w = (w - IMG_SIZE) // 2
 
     arr = arr[start_h:start_h + IMG_SIZE, start_w:start_w + IMG_SIZE]
 
+    # Normalize
     arr = arr / 255.0
 
     return np.expand_dims(arr, axis=0)
@@ -156,7 +170,8 @@ def build_prediction_result(probabilities: np.ndarray) -> dict:
     margin = top_prob - second_prob
     entropy = _normalized_entropy(probs)
 
-    predicted_class = CLASS_NAMES[top_idx]
+    # Use normalized class name for the predicted class
+    predicted_class = normalize_class_name(CLASS_NAMES[top_idx])
     is_low_confidence = top_prob < LOW_CONFIDENCE
     is_ambiguous = margin < MIN_MARGIN
     is_high_entropy = entropy > MAX_NORMALIZED_ENTROPY
@@ -170,8 +185,11 @@ def build_prediction_result(probabilities: np.ndarray) -> dict:
         confidence_level = "low"
 
     public_label = UNKNOWN_LABEL if needs_review else predicted_class
+    
+    # Build probabilities dict with normalized class names
     all_probabilities = {
-        CLASS_NAMES[i]: _round_probability(probs[i]) for i in range(len(CLASS_NAMES))
+        normalize_class_name(CLASS_NAMES[i]): _round_probability(probs[i]) 
+        for i in range(len(CLASS_NAMES))
     }
 
     return {
@@ -181,7 +199,7 @@ def build_prediction_result(probabilities: np.ndarray) -> dict:
         "confidence_level": confidence_level,
         "all_probabilities": all_probabilities,
         "needs_review": needs_review,
-        "second_best_class": CLASS_NAMES[int(sorted_indices[1])] if len(sorted_indices) > 1 else predicted_class,
+        "second_best_class": normalize_class_name(CLASS_NAMES[int(sorted_indices[1])]) if len(sorted_indices) > 1 else predicted_class,
         "second_best_confidence": _round_probability(second_prob),
         "confidence_margin": _round_probability(margin),
         "normalized_entropy": _round_probability(entropy),
@@ -193,6 +211,11 @@ def build_prediction_result(probabilities: np.ndarray) -> dict:
 # ======================
 
 def predict_image(image_path: str | Path) -> Tuple[str, float]:
+    """Run inference on image and return prediction.
+    
+    Returns:
+        Tuple of (label, confidence_score)
+    """
     model = get_model()
     batch = preprocess_image(image_path)
 
@@ -202,6 +225,10 @@ def predict_image(image_path: str | Path) -> Tuple[str, float]:
 
 
 def predict_image_detailed(image_path: str | Path) -> dict:
+    """Run inference on image and return detailed prediction results.
+    
+    Returns all class probabilities and confidence metrics.
+    """
     model = get_model()
     batch = preprocess_image(image_path)
 

@@ -26,15 +26,21 @@ class TestClassNames:
         assert len(CLASS_NAMES) == 4
     
     def test_class_names_format(self):
-        """Test that class names follow consistent naming convention."""
-        # All class names should be lowercase with underscores
+        """Test that class names are strings."""
+        # CLASS_NAMES contains raw training labels (may have mixed case)
         for name in CLASS_NAMES:
-            assert name == name.lower(), f"Class name '{name}' should be lowercase"
             assert isinstance(name, str), f"Class name '{name}' should be string"
+    
+    def test_normalized_class_names_are_lowercase(self):
+        """Test that normalized class names follow consistent naming convention."""
+        # All normalized class names should be lowercase with underscores
+        for name in CLASS_NAMES:
+            normalized = normalize_class_name(name)
+            assert normalized == normalized.lower(), f"Normalized class name '{normalized}' should be lowercase"
     
     def test_expected_classes_present(self):
         """Test that all expected disease classes are present."""
-        expected_classes = {"healthy_eye", "conjunctivitis", "cataract", "keratitis"}
+        expected_classes = {"healthy_eye", "Conjunctivitis Recognition", "Cataract dataset", "keratitis"}
         actual_classes = set(CLASS_NAMES)
         
         assert actual_classes == expected_classes, \
@@ -44,15 +50,15 @@ class TestClassNames:
         """Test that class order matches the training pipeline.
         
         The model was trained with classes in this specific order:
-        Index 0: Normal (healthy_eye)
-        Index 1: Conjunctivitis
-        Index 2: Cataract
-        Index 3: Keratitis
+        Index 0: healthy_eye
+        Index 1: Conjunctivitis Recognition
+        Index 2: Cataract dataset
+        Index 3: keratitis
         
         This order MUST match the training configuration for correct predictions.
         """
-        expected_order = ("healthy_eye", "conjunctivitis", "cataract", "keratitis")
-        assert tuple(CLASS_NAMES) == expected_order, \
+        expected_order = ("healthy_eye", "Conjunctivitis Recognition", "Cataract dataset", "keratitis")
+        assert CLASS_NAMES == expected_order, \
             f"Class order mismatch. Expected {expected_order}, got {CLASS_NAMES}"
 
     def test_training_aliases_are_normalized(self):

@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     # 🔥 DL MODEL (HUGGING FACE HUB)
     # =========================
     model_repo_id: str = "mohamed-wahba77/eye-disease-model"
-    model_filename: str = "eye_disease_model_v2.keras"
+    model_filename: str = "Eye_Disease_model_v3.keras"
     model_path: Path | None = None  # Override: set local model path in .env
 
     # File Upload
