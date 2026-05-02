@@ -144,7 +144,7 @@ Copy `.env.example` to `.env` and configure as needed:
 | `PORT` | Server port | `8000` |
 | `DEBUG` | Debug mode | `false` |
 | `DATABASE_URL` | Database connection | SQLite |
-| `MODEL_PATH` | Path to ML model | `models/eye_disease_final_cropped.keras` |
+| `MODEL_PATH` | Path to ML model | `models/final_eye_model_optimized.h5` |
 | `UPLOAD_DIR` | Upload directory | `uploads/` |
 | `MAX_UPLOAD_SIZE_MB` | Max file size | `10` |
 
@@ -153,7 +153,7 @@ Copy `.env.example` to `.env` and configure as needed:
 **Important**: The model file is NOT included in the repository. Place your trained model at:
 
 ```
-backend/models/eye_disease_final_cropped.keras
+backend/models/final_eye_model_optimized.h5
 ```
 
 ### Run Backend
